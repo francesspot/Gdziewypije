@@ -1,10 +1,10 @@
-# Ścieżki administratora: dodawanie, edycja i wyłączanie barów (WB.11, WF.18).
+# Ścieżki administratora: dodawanie, edycja i wyłączanie barów i napojów (WB.11, WF.18).
 import psycopg
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.api.dependencies import require_admin
 from src.db.connection import get_connection
-from src.schemas.admin import ActiveRequest, BarRequest, BarResponse
+from src.schemas.admin import ActiveRequest, BarRequest, BarResponse, DrinkRequest, DrinkResponse
 
 # WNF.06: require_admin na poziomie routera obejmuje wszystkie ścieżki modułu
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
@@ -60,4 +60,52 @@ def set_bar_active(bar_id: int, data: ActiveRequest, conn: psycopg.Connection = 
     ).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Bar nie istnieje")
+    return row
+
+
+DRINK_COLUMNS = "id, name, category, volume_ml, is_active"
+
+# UNIQUE (name, volume_ml) w drinks: ten sam napój może mieć kilka pojemności, ale nie dwa razy tę samą
+DUPLICATE_DRINK = "Napój o tej nazwie i pojemności już istnieje"
+
+
+@router.post("/drinks", status_code=201, response_model=DrinkResponse)
+def create_drink(data: DrinkRequest, conn: psycopg.Connection = Depends(get_connection)) -> dict:
+    try:
+        return conn.execute(
+            f"INSERT INTO drinks (name, category, volume_ml) VALUES (%s, %s, %s) RETURNING {DRINK_COLUMNS}",
+            (data.name, data.category, data.volume_ml),
+        ).fetchone()
+    except psycopg.errors.UniqueViolation:
+        raise HTTPException(status_code=409, detail=DUPLICATE_DRINK)
+
+
+@router.put("/drinks/{drink_id}", response_model=DrinkResponse)
+def update_drink(drink_id: int, data: DrinkRequest, conn: psycopg.Connection = Depends(get_connection)) -> dict:
+    # Edycja może zderzyć się z innym napojem, np. po zmianie pojemności na już istniejącą
+    try:
+        row = conn.execute(
+            f"""
+            UPDATE drinks SET name = %s, category = %s, volume_ml = %s
+            WHERE id = %s
+            RETURNING {DRINK_COLUMNS}
+            """,
+            (data.name, data.category, data.volume_ml, drink_id),
+        ).fetchone()
+    except psycopg.errors.UniqueViolation:
+        raise HTTPException(status_code=409, detail=DUPLICATE_DRINK)
+    if row is None:
+        raise HTTPException(status_code=404, detail="Napój nie istnieje")
+    return row
+
+
+@router.patch("/drinks/{drink_id}", response_model=DrinkResponse)
+def set_drink_active(drink_id: int, data: ActiveRequest, conn: psycopg.Connection = Depends(get_connection)) -> dict:
+    # Ceny wyłączonego napoju znikają z v_current_prices, a report_price odrzuca nowe zgłoszenia
+    row = conn.execute(
+        f"UPDATE drinks SET is_active = %s WHERE id = %s RETURNING {DRINK_COLUMNS}",
+        (data.is_active, drink_id),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Napój nie istnieje")
     return row
