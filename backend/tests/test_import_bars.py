@@ -1,9 +1,13 @@
 # Testy importu barów z OSM (WNF.10): parsowanie Overpass i zapis bez duplikatów.
 # Testy zapisu wymagają działającej bazy i cofają transakcję, więc nic nie zostaje w bazie.
+import io
+import json
+from unittest.mock import patch
+
 import pytest
 
 from src.db.connection import connect
-from src.import_bars import parse_element, parse_elements, save_bars
+from src.import_bars import fetch_elements, parse_element, parse_elements, save_bars
 
 
 def test_parse_node_maps_tags_to_bar_fields():
@@ -169,10 +173,10 @@ def test_save_bars_updates_same_row_and_deactivates_missing_one(db):
     assert kept_again["latitude"] == pytest.approx(51.12)
     assert gone["is_active"] is False
 
-    # Bar, który wraca w kolejnym imporcie, jest włączany z powrotem
+    # Powrót w OSM nie włącza baru wyłączonego wcześniejszym importem (WB.11)
     third = save_bars(db, [_bar(kept_id), _bar(gone_id)])
     assert third["inserted"] == 0
-    assert _stored(db, gone_id)["is_active"] is True
+    assert _stored(db, gone_id)["is_active"] is False
 
 
 def test_save_bars_leaves_manual_bar_active(db):
@@ -207,3 +211,56 @@ def test_save_bars_rejects_empty_list(db):
 
     row = _stored(db, -91004)
     assert row["is_active"] is True
+
+
+def test_save_bars_keeps_admin_disabled_osm_bar_inactive(db):
+    osm_id = -91005
+    save_bars(db, [_bar(osm_id)])
+    db.execute(
+        "UPDATE bars SET is_active = false WHERE osm_type = 'node' AND osm_id = %s",
+        (osm_id,),
+    )
+
+    save_bars(db, [_bar(osm_id, name="Po imporcie")])
+    row = _stored(db, osm_id)
+
+    assert row["is_active"] is False
+    assert row["name"] == "Po imporcie"
+
+
+class _FakeOverpassResponse:
+    def __init__(self, payload):
+        self._body = io.BytesIO(json.dumps(payload).encode())
+
+    def __enter__(self):
+        return self._body
+
+    def __exit__(self, exc_type, exc, tb):
+        return False
+
+
+def test_fetch_elements_rejects_overpass_remark():
+    payload = {
+        "remark": "runtime error: Query timed out after 90 seconds.",
+        "elements": [
+            {"type": "node", "id": 1, "lat": 51.1, "lon": 17.0, "tags": {"name": "X"}},
+        ],
+    }
+
+    with patch("src.import_bars.urllib.request.urlopen", return_value=_FakeOverpassResponse(payload)):
+        with pytest.raises(RuntimeError, match="Overpass zwrócił błąd"):
+            fetch_elements("https://overpass-api.de/api/interpreter")
+
+
+def test_fetch_elements_rejects_empty_elements():
+    with patch(
+        "src.import_bars.urllib.request.urlopen",
+        return_value=_FakeOverpassResponse({"elements": []}),
+    ):
+        with pytest.raises(RuntimeError, match="nie zwrócił żadnych barów"):
+            fetch_elements("https://overpass-api.de/api/interpreter")
+
+
+def test_fetch_elements_rejects_non_https_url():
+    with pytest.raises(ValueError, match="HTTPS"):
+        fetch_elements("http://overpass-api.de/api/interpreter")

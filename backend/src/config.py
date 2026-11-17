@@ -1,6 +1,7 @@
 # Konfiguracja aplikacji wczytywana ze zmiennych środowiskowych.
 from functools import lru_cache
 
+from pydantic import field_validator
 from pydantic_settings import BaseSettings, SettingsConfigDict
 
 
@@ -20,6 +21,13 @@ class Settings(BaseSettings):
 
     # Adres Overpass API używany przez import barów z OpenStreetMap
     overpass_url: str = "https://overpass-api.de/api/interpreter"
+
+    @field_validator("overpass_url")
+    @classmethod
+    def overpass_url_must_be_https(cls, value: str) -> str:
+        if not value.lower().startswith("https://"):
+            raise ValueError("OVERPASS_URL musi być adresem HTTPS")
+        return value
 
 
 # Ustawienia wczytywane raz, przy pierwszym użyciu, a nie przy imporcie modułu

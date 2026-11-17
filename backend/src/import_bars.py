@@ -70,10 +70,9 @@ def parse_elements(elements: list) -> list[dict]:
 
 
 def fetch_elements(url: str) -> list[dict]:
-    """Pobiera obiekty z Overpass. Pusta odpowiedź jest błędem, nic nie zapisuje.
+    """Pobiera obiekty z Overpass. Pusta lub błędna odpowiedź nic nie zapisuje.
 
-    Publiczny Overpass czasem zwraca 429 albo 502. Do trzech prób z przerwą.
-    Przy błędzie nic nie jest zapisywane.
+    Publiczny Overpass czasem zwraca 429, 502 albo zrywa połączenie. Do trzech prób.
     """
     attempt = 0
     while True:
@@ -83,11 +82,17 @@ def fetch_elements(url: str) -> list[dict]:
             # Ostatnia próba kończy import wyjątkiem, baza zostaje bez zmian
             if error.code not in (429, 502, 503, 504) or attempt == 2:
                 raise
-            attempt += 1
-            time.sleep(5 * attempt)
+        except (urllib.error.URLError, TimeoutError):
+            if attempt == 2:
+                raise
+        attempt += 1
+        time.sleep(5 * attempt)
 
 
 def _fetch_once(url: str) -> list[dict]:
+    if not url.lower().startswith("https://"):
+        raise ValueError("OVERPASS_URL musi być adresem HTTPS")
+
     body = urllib.parse.urlencode({"data": OVERPASS_QUERY}).encode()
     request = urllib.request.Request(
         url,
@@ -95,11 +100,22 @@ def _fetch_once(url: str) -> list[dict]:
         headers={"User-Agent": USER_AGENT},
         method="POST",
     )
-    with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
-        payload = json.load(response)
+    try:
+        with urllib.request.urlopen(request, timeout=TIMEOUT_SECONDS) as response:
+            payload = json.load(response)
+    except json.JSONDecodeError as error:
+        raise RuntimeError("Overpass nie zwrócił poprawnego JSON") from error
 
-    elements = payload.get("elements") if isinstance(payload, dict) else None
-    if not elements:
+    if not isinstance(payload, dict):
+        raise RuntimeError("Overpass nie zwrócił obiektu JSON")
+
+    # Timeout Overpass bywa HTTP 200 z częścią elementów i polem remark
+    remark = payload.get("remark")
+    if remark:
+        raise RuntimeError(f"Overpass zwrócił błąd: {remark}")
+
+    elements = payload.get("elements")
+    if not isinstance(elements, list) or not elements:
         raise RuntimeError("Overpass nie zwrócił żadnych barów")
     return elements
 
@@ -124,7 +140,8 @@ def save_bars(conn, bars: list[dict]) -> dict:
     inserted = 0
     updated = 0
     for bar in bars:
-        # Drugi zapis tego samego osm_type i osm_id aktualizuje wiersz i włącza go z powrotem
+        # Drugi zapis tego samego osm_type i osm_id aktualizuje dane, ale nie is_active
+        # (wyłączenie przez administratora ma zostać)
         conn.execute(
             """
             INSERT INTO bars (osm_type, osm_id, name, address, opening_hours, location, is_active)
@@ -133,8 +150,7 @@ def save_bars(conn, bars: list[dict]) -> dict:
                 name = EXCLUDED.name,
                 address = EXCLUDED.address,
                 opening_hours = EXCLUDED.opening_hours,
-                location = EXCLUDED.location,
-                is_active = true
+                location = EXCLUDED.location
             """,
             (
                 bar["osm_type"],
