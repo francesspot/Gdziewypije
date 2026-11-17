@@ -1,9 +1,11 @@
-# Ścieżki barów: lista i mapa (WF.01), szczegóły (WF.02), wyszukiwanie (WF.06), ranking Q2 (WF.05).
+# Ścieżki barów: lista i mapa (WF.01), szczegóły (WF.02), wyszukiwanie (WF.06), ranking Q2 (WF.05), pobliże Q1 (WF.17).
+from typing import Annotated
+
 import psycopg
 from fastapi import APIRouter, Depends, HTTPException, Query
 
 from src.db.connection import get_connection
-from src.schemas.bars import BarResponse, RankingBarResponse
+from src.schemas.bars import BarResponse, NearbyBarResponse, RankingBarResponse
 
 router = APIRouter(tags=["bars"])
 
@@ -74,6 +76,29 @@ def list_bars(
             ORDER BY b.name, b.id
             """,
         ).fetchall()
+    return attach_prices(conn, rows)
+
+
+@router.get("/nearby", response_model=list[NearbyBarResponse])
+def nearby_bars(
+    lat: Annotated[float, Query(ge=-90, le=90)],
+    lon: Annotated[float, Query(ge=-180, le=180)],
+    radius_m: Annotated[float, Query(gt=0)],
+    conn: psycopg.Connection = Depends(get_connection),
+) -> list[dict]:
+    # Q1: ST_DWithin i ST_Distance w metrach; ST_MakePoint przyjmuje długość, potem szerokość
+    origin = "ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography"
+    rows = conn.execute(
+        f"""
+        SELECT {BAR_COLUMNS},
+               ST_Distance(b.location, {origin}) AS distance_m
+        FROM bars b
+        JOIN v_bar_stats s ON s.bar_id = b.id
+        WHERE ST_DWithin(b.location, {origin}, %s)
+        ORDER BY distance_m, b.id
+        """,
+        (lon, lat, lon, lat, radius_m),
+    ).fetchall()
     return attach_prices(conn, rows)
 
 
