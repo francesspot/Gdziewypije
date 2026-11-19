@@ -228,6 +228,20 @@ def test_save_bars_keeps_admin_disabled_osm_bar_inactive(db):
     assert row["name"] == "Po imporcie"
 
 
+def test_save_bars_counts_only_changed_bars(db):
+    # now() jest stałe w obrębie transakcji testu, więc zapis bez zmian sprawdza licznik, a nie updated_at
+    osm_id = -91006
+    save_bars(db, [_bar(osm_id, address=None)])
+
+    same = save_bars(db, [_bar(osm_id, address=None)])
+    moved = save_bars(db, [_bar(osm_id, address=None, latitude=51.12)])
+
+    assert same["inserted"] == 0
+    assert same["updated"] == 0
+    assert moved["updated"] == 1
+    assert _stored(db, osm_id)["latitude"] == pytest.approx(51.12)
+
+
 class _FakeOverpassResponse:
     def __init__(self, payload):
         self._body = io.BytesIO(json.dumps(payload).encode())

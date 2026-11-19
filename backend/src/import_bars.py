@@ -143,7 +143,9 @@ def save_bars(conn, bars: list[dict]) -> dict:
         # Dane baru z OSM (nazwa, adres, godziny, punkt) są nadrzędne: import je odświeża,
         # także po edycji przez administratora. Edycja admina jest trwała tylko dla barów bez osm_id.
         # is_active nie jest aktualizowane, żeby wyłączenie przez administratora zostało.
-        conn.execute(
+        # Bar bez zmian nie jest nadpisywany, więc wyzwalacz nie przestawia mu updated_at.
+        # IS DISTINCT FROM traktuje dwa NULL jako równe (np. brak adresu w bazie i w OSM).
+        written = conn.execute(
             """
             INSERT INTO bars (osm_type, osm_id, name, address, opening_hours, location, is_active)
             VALUES (%s, %s, %s, %s, %s, ST_SetSRID(ST_MakePoint(%s, %s), 4326)::geography, true)
@@ -152,6 +154,9 @@ def save_bars(conn, bars: list[dict]) -> dict:
                 address = EXCLUDED.address,
                 opening_hours = EXCLUDED.opening_hours,
                 location = EXCLUDED.location
+            WHERE (bars.name, bars.address, bars.opening_hours, bars.location)
+                IS DISTINCT FROM
+                  (EXCLUDED.name, EXCLUDED.address, EXCLUDED.opening_hours, EXCLUDED.location)
             """,
             (
                 bar["osm_type"],
@@ -163,12 +168,13 @@ def save_bars(conn, bars: list[dict]) -> dict:
                 bar["latitude"],
             ),
         )
+        # rowcount 0 oznacza bar już zapisany i bez zmian
         key = (bar["osm_type"], bar["osm_id"])
-        if key in existing:
-            updated += 1
-        else:
+        if key not in existing:
             inserted += 1
             existing.add(key)
+        elif written.rowcount == 1:
+            updated += 1
 
     # Już wyłączony bar nie jest aktualizowany ponownie
     deactivated = conn.execute(
