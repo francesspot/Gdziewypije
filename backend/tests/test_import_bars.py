@@ -7,7 +7,13 @@ from unittest.mock import patch
 import pytest
 
 from src.db.connection import connect
-from src.import_bars import fetch_elements, parse_element, parse_elements, save_bars
+from src.import_bars import (
+    check_import_size,
+    fetch_elements,
+    parse_element,
+    parse_elements,
+    save_bars,
+)
 
 
 def test_parse_node_maps_tags_to_bar_fields():
@@ -240,6 +246,23 @@ def test_save_bars_counts_only_changed_bars(db):
     assert same["updated"] == 0
     assert moved["updated"] == 1
     assert _stored(db, osm_id)["latitude"] == pytest.approx(51.12)
+
+
+def test_check_import_size_rejects_much_smaller_import(db):
+    bars = [_bar(-91100 - i) for i in range(10)]
+    # Zapis wyłącza w transakcji testu pozostałe bary OSM, więc aktywnych jest dokładnie 10
+    save_bars(db, bars)
+
+    # 8 z 10 to równo 80%, więc przechodzi
+    check_import_size(db, bars[:8])
+    with pytest.raises(RuntimeError, match="Import przerwany"):
+        check_import_size(db, bars[:5])
+
+
+def test_check_import_size_accepts_first_import(db):
+    db.execute("UPDATE bars SET is_active = false WHERE osm_type IS NOT NULL")
+
+    check_import_size(db, [_bar(-91200)])
 
 
 class _FakeOverpassResponse:

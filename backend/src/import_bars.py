@@ -13,6 +13,9 @@ from src.db.connection import connect
 USER_AGENT = "Gdziewypije/1.0 (OSM bar import; student project)"
 TIMEOUT_SECONDS = 90
 
+# Najmniejsza część aktywnych barów z OSM, jaką musi zawierać import (patrz check_import_size)
+MIN_IMPORT_RATIO = 0.8
+
 # amenity=bar daje około 66 miejsc. Puby w OSM to też bary, razem jest ich około 150
 # (raport etapu 2 podaje ok. 160). out center dodaje punkt drogom i relacjom.
 OVERPASS_QUERY = """
@@ -120,6 +123,22 @@ def _fetch_once(url: str) -> list[dict]:
     return elements
 
 
+def check_import_size(conn, bars: list[dict]) -> None:
+    """Przerywa import, gdy lista jest dużo mniejsza niż liczba aktywnych barów z OSM.
+
+    Taka odpowiedź to raczej błąd Overpass niż masowe zamknięcia. save_bars wyłączyłby
+    brakujące bary na stałe, bo kolejny import nie włącza ich z powrotem.
+    Przy pierwszym imporcie aktywnych barów z OSM nie ma, więc warunek zawsze przechodzi.
+    """
+    active = conn.execute(
+        "SELECT count(*) AS n FROM bars WHERE osm_type IS NOT NULL AND is_active"
+    ).fetchone()["n"]
+    if len(bars) < MIN_IMPORT_RATIO * active:
+        raise RuntimeError(
+            f"Import zawiera {len(bars)} barów, a aktywnych z OSM jest {active}. Import przerwany."
+        )
+
+
 def save_bars(conn, bars: list[dict]) -> dict:
     """Zapisuje bary i wyłącza te z OSM, których nie ma na liście.
 
@@ -200,6 +219,7 @@ def main() -> None:
         raise RuntimeError("Overpass nie zwrócił barów z nazwą i współrzędnymi")
 
     with connect() as conn:
+        check_import_size(conn, bars)
         stats = save_bars(conn, bars)
 
     print(
