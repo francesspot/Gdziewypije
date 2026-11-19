@@ -77,6 +77,9 @@ def fetch_elements(url: str) -> list[dict]:
 
     Publiczny Overpass czasem zwraca 429, 502 albo zrywa połączenie. Do trzech prób.
     """
+    if not url.lower().startswith("https://"):
+        raise ValueError("OVERPASS_URL musi być adresem HTTPS")
+
     attempt = 0
     while True:
         try:
@@ -85,7 +88,8 @@ def fetch_elements(url: str) -> list[dict]:
             # Ostatnia próba kończy import wyjątkiem, baza zostaje bez zmian
             if error.code not in (429, 502, 503, 504) or attempt == 2:
                 raise
-        except (urllib.error.URLError, TimeoutError):
+        # Zerwanie połączenia przy czytaniu odpowiedzi to ConnectionError, a nie URLError
+        except (urllib.error.URLError, TimeoutError, ConnectionError):
             if attempt == 2:
                 raise
         attempt += 1
@@ -93,9 +97,6 @@ def fetch_elements(url: str) -> list[dict]:
 
 
 def _fetch_once(url: str) -> list[dict]:
-    if not url.lower().startswith("https://"):
-        raise ValueError("OVERPASS_URL musi być adresem HTTPS")
-
     body = urllib.parse.urlencode({"data": OVERPASS_QUERY}).encode()
     request = urllib.request.Request(
         url,
@@ -127,7 +128,7 @@ def check_import_size(conn, bars: list[dict]) -> None:
     """Przerywa import, gdy lista jest dużo mniejsza niż liczba aktywnych barów z OSM.
 
     Taka odpowiedź to raczej błąd Overpass niż masowe zamknięcia. save_bars wyłączyłby
-    brakujące bary na stałe, bo kolejny import nie włącza ich z powrotem.
+    brakujące bary, a kolejny import nie włącza ich z powrotem (robi to tylko administrator).
     Przy pierwszym imporcie aktywnych barów z OSM nie ma, więc warunek zawsze przechodzi.
     """
     active = conn.execute(
@@ -195,6 +196,8 @@ def save_bars(conn, bars: list[dict]) -> dict:
         elif written.rowcount == 1:
             updated += 1
 
+    # Import tylko wyłącza bary: ON CONFLICT nie zmienia is_active, więc bar, który wróci do OSM,
+    # nie jest włączany z powrotem. Włącza go tylko administrator (PATCH /admin/bars/{id}).
     # Już wyłączony bar nie jest aktualizowany ponownie
     deactivated = conn.execute(
         """

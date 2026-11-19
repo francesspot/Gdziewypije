@@ -301,3 +301,27 @@ def test_fetch_elements_rejects_empty_elements():
 def test_fetch_elements_rejects_non_https_url():
     with pytest.raises(ValueError, match="HTTPS"):
         fetch_elements("http://overpass-api.de/api/interpreter")
+
+
+def test_fetch_elements_retries_after_connection_reset():
+    element = {"type": "node", "id": 1, "lat": 51.1, "lon": 17.0, "tags": {"name": "X"}}
+    responses = [ConnectionResetError(), _FakeOverpassResponse({"elements": [element]})]
+
+    # sleep jest podmieniony, żeby test nie czekał między próbami
+    with patch("src.import_bars.time.sleep"), patch(
+        "src.import_bars.urllib.request.urlopen", side_effect=responses
+    ) as urlopen:
+        elements = fetch_elements("https://overpass-api.de/api/interpreter")
+
+    assert elements == [element]
+    assert urlopen.call_count == 2
+
+
+def test_fetch_elements_gives_up_after_three_connection_resets():
+    with patch("src.import_bars.time.sleep"), patch(
+        "src.import_bars.urllib.request.urlopen", side_effect=ConnectionResetError()
+    ) as urlopen:
+        with pytest.raises(ConnectionResetError):
+            fetch_elements("https://overpass-api.de/api/interpreter")
+
+    assert urlopen.call_count == 3
