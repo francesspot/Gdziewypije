@@ -14,7 +14,7 @@ USER_AGENT = "Gdziewypije/1.0 (OSM bar import; student project)"
 TIMEOUT_SECONDS = 90
 
 # amenity=bar daje około 66 miejsc. Puby w OSM to też bary, razem jest ich około 150
-# (tyle zakłada raport etapu 2). out center dodaje punkt drogom i relacjom.
+# (raport etapu 2 podaje ok. 160). out center dodaje punkt drogom i relacjom.
 OVERPASS_QUERY = """
 [out:json][timeout:90];
 area["name"="Wrocław"]["boundary"="administrative"]["admin_level"="8"]->.wroclaw;
@@ -140,8 +140,9 @@ def save_bars(conn, bars: list[dict]) -> dict:
     inserted = 0
     updated = 0
     for bar in bars:
-        # Drugi zapis tego samego osm_type i osm_id aktualizuje dane, ale nie is_active
-        # (wyłączenie przez administratora ma zostać)
+        # Dane baru z OSM (nazwa, adres, godziny, punkt) są nadrzędne: import je odświeża,
+        # także po edycji przez administratora. Edycja admina jest trwała tylko dla barów bez osm_id.
+        # is_active nie jest aktualizowane, żeby wyłączenie przez administratora zostało.
         conn.execute(
             """
             INSERT INTO bars (osm_type, osm_id, name, address, opening_hours, location, is_active)
