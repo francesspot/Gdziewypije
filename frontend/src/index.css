@@ -10,8 +10,8 @@ body,
 }
 
 body {
-  font-family: 'Patrick Hand', 'Comic Sans MS', cursive;
-  color: #1a1a1a;
+  font-family: var(--font-sans);
+  color: var(--ink-oak);
 }
 
 button,

@@ -9,6 +9,7 @@ const PIN_POSITIONS = {
 function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
   return (
     <section className="map-screen" aria-label="Mapa">
+      <div className="map-canvas" aria-hidden="true" />
       <p className="map-placeholder">Mapa</p>
       {!topOpen ? (
         <button className="edge-button edge-button-left" type="button" onClick={onOpenTop}>
@@ -30,8 +31,8 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <path
               d="M12 3.2 14.6 8.8 20.8 9.4 16.2 13.6 17.6 19.8 12 16.8 6.4 19.8 7.8 13.6 3.2 9.4 9.4 8.8 Z"
-              fill="#facc15"
-              stroke="#1a1a1a"
+              fill="var(--accent-magenta)"
+              stroke="var(--ink-oak)"
               strokeWidth="2.5"
               strokeLinejoin="round"
               strokeLinecap="round"
@@ -48,11 +49,11 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
         </button>
         <button className="map-locate" type="button" aria-label="Moja lokalizacja">
           <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="3.2" fill="none" stroke="#1a1a1a" strokeWidth="2.5" />
+            <circle cx="12" cy="12" r="3.2" fill="none" stroke="var(--bg-foam)" strokeWidth="2.5" />
             <path
               d="M12 3.5 V7.2 M12 16.8 V20.5 M3.5 12 H7.2 M16.8 12 H20.5"
               fill="none"
-              stroke="#1a1a1a"
+              stroke="var(--bg-foam)"
               strokeWidth="2.5"
               strokeLinecap="round"
             />

@@ -38,14 +38,24 @@ function App() {
         onOpenTop={() => setTopOpen(true)}
         onOpenList={() => setListOpen(true)}
       />
-      {topOpen ? <TopPanel onClose={() => setTopOpen(false)} /> : null}
-      {listOpen ? (
-        <ListPanel
-          favoriteIds={favoriteIds}
-          onToggleFavorite={toggleFavorite}
-          onClose={() => setListOpen(false)}
-        />
-      ) : null}
+      <TopPanel
+        open={topOpen}
+        onClose={() => setTopOpen(false)}
+        onSwitchToList={() => {
+          setTopOpen(false)
+          setListOpen(true)
+        }}
+      />
+      <ListPanel
+        open={listOpen}
+        favoriteIds={favoriteIds}
+        onToggleFavorite={toggleFavorite}
+        onClose={() => setListOpen(false)}
+        onSwitchToTop={() => {
+          setListOpen(false)
+          setTopOpen(true)
+        }}
+      />
     </div>
   )
 }

@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { PLACEHOLDER_BARS } from '../placeholderBars'
 import CloseArrow from './CloseArrow'
 
-function ListPanel({ favoriteIds, onToggleFavorite, onClose }) {
+function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop }) {
   const [query, setQuery] = useState('')
   const normalized = query.trim().toLowerCase()
   const visibleBars = PLACEHOLDER_BARS.filter((bar) =>
@@ -10,8 +10,21 @@ function ListPanel({ favoriteIds, onToggleFavorite, onClose }) {
   )
 
   return (
-    <aside className="side-panel side-panel-right" aria-label="Lista barów">
+    <aside
+      className={['side-panel', 'side-panel-right', open ? 'is-open' : ''].filter(Boolean).join(' ')}
+      aria-label="Lista barów"
+      aria-hidden={!open}
+      inert={!open}
+    >
       <header className="list-header">
+        <button
+          className="panel-switch-button"
+          type="button"
+          onClick={onSwitchToTop}
+          aria-label="Przejdź do TOP"
+        >
+          TOP
+        </button>
         <h1>Lista</h1>
         <button className="close-button" type="button" onClick={onClose} aria-label="Zamknij listę">
           <CloseArrow direction="right" />
@@ -31,14 +44,14 @@ function ListPanel({ favoriteIds, onToggleFavorite, onClose }) {
             cy="10.5"
             r="6.2"
             fill="none"
-            stroke="#1a1a1a"
+            stroke="var(--ink-oak)"
             strokeWidth="2.5"
             strokeLinecap="round"
           />
           <path
             d="M15.4 15.4 L20 20"
             fill="none"
-            stroke="#1a1a1a"
+            stroke="var(--ink-oak)"
             strokeWidth="2.5"
             strokeLinecap="round"
           />
@@ -61,7 +74,7 @@ function ListPanel({ favoriteIds, onToggleFavorite, onClose }) {
                 <svg viewBox="0 0 24 24" aria-hidden="true">
                   <path
                     d="M12 3.2 14.6 8.8 20.8 9.4 16.2 13.6 17.6 19.8 12 16.8 6.4 19.8 7.8 13.6 3.2 9.4 9.4 8.8 Z"
-                    stroke="#1a1a1a"
+                    stroke="var(--ink-oak)"
                     strokeWidth="2.5"
                     strokeLinejoin="round"
                     strokeLinecap="round"
