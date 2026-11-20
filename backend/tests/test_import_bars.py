@@ -2,6 +2,8 @@
 # Testy zapisu wymagają działającej bazy i cofają transakcję, więc nic nie zostaje w bazie.
 import io
 import json
+import ssl
+import urllib.error
 from unittest.mock import patch
 
 import pytest
@@ -325,3 +327,17 @@ def test_fetch_elements_gives_up_after_three_connection_resets():
             fetch_elements("https://overpass-api.de/api/interpreter")
 
     assert urlopen.call_count == 3
+
+
+def test_fetch_elements_does_not_retry_certificate_error():
+    # urlopen opakowuje błąd certyfikatu w URLError z przyczyną w polu reason
+    error = urllib.error.URLError(ssl.SSLCertVerificationError("certificate has expired"))
+
+    with patch("src.import_bars.time.sleep") as sleep, patch(
+        "src.import_bars.urllib.request.urlopen", side_effect=error
+    ) as urlopen:
+        with pytest.raises(urllib.error.URLError):
+            fetch_elements("https://overpass-api.de/api/interpreter")
+
+    assert urlopen.call_count == 1
+    sleep.assert_not_called()

@@ -1,6 +1,7 @@
 # Import barów Wrocławia z Overpass API do tabeli bars (WNF.09, WNF.10).
 # Uruchomienie z katalogu backend/: python -m src.import_bars
 import json
+import ssl
 import time
 import urllib.error
 import urllib.parse
@@ -76,6 +77,7 @@ def fetch_elements(url: str) -> list[dict]:
     """Pobiera obiekty z Overpass. Pusta lub błędna odpowiedź nic nie zapisuje.
 
     Publiczny Overpass czasem zwraca 429, 502 albo zrywa połączenie. Do trzech prób.
+    Błąd certyfikatu HTTPS nie jest ponawiany.
     """
     if not url.lower().startswith("https://"):
         raise ValueError("OVERPASS_URL musi być adresem HTTPS")
@@ -88,8 +90,12 @@ def fetch_elements(url: str) -> list[dict]:
             # Ostatnia próba kończy import wyjątkiem, baza zostaje bez zmian
             if error.code not in (429, 502, 503, 504) or attempt == 2:
                 raise
+        except urllib.error.URLError as error:
+            # Błąd certyfikatu nie mija przy kolejnej próbie, więc import kończy się od razu
+            if isinstance(error.reason, ssl.SSLCertVerificationError) or attempt == 2:
+                raise
         # Zerwanie połączenia przy czytaniu odpowiedzi to ConnectionError, a nie URLError
-        except (urllib.error.URLError, TimeoutError, ConnectionError):
+        except (TimeoutError, ConnectionError):
             if attempt == 2:
                 raise
         attempt += 1
