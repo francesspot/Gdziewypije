@@ -17,10 +17,89 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 })
 
+const BAR_MARKER_ICON_HEIGHT = 34
+const BAR_MARKER_ICON_WIDTH_RATING = 72
+const BAR_MARKER_ICON_WIDTH_PRICE = 108
+const BAR_MARKER_ICON_WIDTH_NO_DATA = 128
+
+const BAR_MARKER_STAR_SVG =
+  '<svg class="bar-marker-star-icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" fill="currentColor"/></svg>'
+
+const BAR_MARKER_DOLLAR_SVG =
+  '<svg class="bar-marker-dollar-icon" viewBox="0 0 24 24" aria-hidden="true"><text x="12" y="18" text-anchor="middle" font-size="18" font-family="Inter, sans-serif" font-weight="700" fill="currentColor">$</text></svg>'
+
+function escapeHtml(text) {
+  return String(text)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#39;')
+}
+
+function formatMarkerRating(avgRating) {
+  return avgRating == null ? '–' : avgRating.toFixed(1)
+}
+
+function cheapestPriceAmount(prices) {
+  if (!prices || prices.length === 0) {
+    return null
+  }
+  let min = prices[0].amount
+  for (let i = 1; i < prices.length; i += 1) {
+    if (prices[i].amount < min) {
+      min = prices[i].amount
+    }
+  }
+  return min
+}
+
+function formatMarkerPriceLabel(prices) {
+  const amount = cheapestPriceAmount(prices)
+  if (amount == null) {
+    return 'brak danych'
+  }
+  return `${amount.toLocaleString('pl-PL', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} zł`
+}
+
+function createBarMarkerIcon(mode, bar) {
+  let leadingSvg
+  let labelText
+  let iconWidth
+
+  if (mode === 'rating') {
+    leadingSvg = BAR_MARKER_STAR_SVG
+    labelText = escapeHtml(formatMarkerRating(bar.avg_rating))
+    iconWidth = BAR_MARKER_ICON_WIDTH_RATING
+  } else {
+    leadingSvg = BAR_MARKER_DOLLAR_SVG
+    const rawLabel = formatMarkerPriceLabel(bar.prices)
+    labelText = escapeHtml(rawLabel)
+    iconWidth = rawLabel === 'brak danych' ? BAR_MARKER_ICON_WIDTH_NO_DATA : BAR_MARKER_ICON_WIDTH_PRICE
+  }
+
+  const html = `<div class="bar-marker-pill">${leadingSvg}<span class="bar-marker-value">${labelText}</span></div>`
+  return L.divIcon({
+    className: 'bar-marker',
+    html,
+    iconSize: [iconWidth, BAR_MARKER_ICON_HEIGHT],
+    // Kotwica na czubku strzałki pod pigułką.
+    iconAnchor: [iconWidth / 2, BAR_MARKER_ICON_HEIGHT],
+  })
+}
+
 function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
   const markersLayerRef = useRef(null)
+  const barsRef = useRef([])
+  const fitBoundsDoneRef = useRef(false)
+  const [mapReady, setMapReady] = useState(false)
+  const [bars, setBars] = useState([])
+  const [mode, setMode] = useState('rating')
   const [fetchError, setFetchError] = useState('')
 
   // Parametr zostaje dla późniejszych ulubionych; odwołanie gasi ostrzeżenie o nieużyciu.
@@ -44,10 +123,12 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
     }).addTo(map)
 
     mapRef.current = map
+    setMapReady(true)
 
     return () => {
       map.remove()
       mapRef.current = null
+      setMapReady(false)
     }
   }, [])
 
@@ -55,36 +136,13 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
     let cancelled = false
 
     getBars()
-      .then((bars) => {
-        // Odpowiedź po odmontowaniu (np. StrictMode) nie aktualizuje mapy.
+      .then((fetchedBars) => {
         if (cancelled) {
           return
         }
-        const map = mapRef.current
-        if (!map) {
-          return
-        }
-
         setFetchError('')
-
-        const layer = L.layerGroup()
-        const boundsPoints = []
-
-        for (const bar of bars) {
-          const { latitude, longitude } = bar
-          if (latitude == null || longitude == null) {
-            continue
-          }
-          L.marker([latitude, longitude]).addTo(layer)
-          boundsPoints.push([latitude, longitude])
-        }
-
-        layer.addTo(map)
-        markersLayerRef.current = layer
-
-        if (boundsPoints.length > 0) {
-          map.fitBounds(boundsPoints, { padding: [40, 40] })
-        }
+        barsRef.current = fetchedBars
+        setBars(fetchedBars)
       })
       .catch((err) => {
         if (!cancelled) {
@@ -94,14 +152,53 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
 
     return () => {
       cancelled = true
-      const map = mapRef.current
-      const layer = markersLayerRef.current
-      if (map && layer) {
-        map.removeLayer(layer)
-      }
-      markersLayerRef.current = null
     }
   }, [])
+
+  useEffect(() => {
+    if (!mapReady) {
+      return
+    }
+    const map = mapRef.current
+    if (!map) {
+      return
+    }
+
+    const previousLayer = markersLayerRef.current
+    if (previousLayer) {
+      map.removeLayer(previousLayer)
+    }
+
+    const layer = L.layerGroup()
+    const boundsPoints = []
+
+    for (const bar of bars) {
+      const { latitude, longitude } = bar
+      if (latitude == null || longitude == null) {
+        continue
+      }
+      L.marker([latitude, longitude], { icon: createBarMarkerIcon(mode, bar) }).addTo(layer)
+      boundsPoints.push([latitude, longitude])
+    }
+
+    layer.addTo(map)
+    markersLayerRef.current = layer
+
+    // Tylko przy pierwszym zestawie punktów — zmiana trybu nie przesuwa widoku.
+    if (!fitBoundsDoneRef.current && boundsPoints.length > 0) {
+      map.fitBounds(boundsPoints, { padding: [40, 40] })
+      fitBoundsDoneRef.current = true
+    }
+
+    return () => {
+      if (map.hasLayer(layer)) {
+        map.removeLayer(layer)
+      }
+      if (markersLayerRef.current === layer) {
+        markersLayerRef.current = null
+      }
+    }
+  }, [bars, mode, mapReady])
 
   return (
     <section className="map-screen" aria-label="Mapa">
@@ -122,6 +219,43 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
         </button>
       ) : null}
       <div className="map-controls" aria-label="Kontrolki mapy">
+        <div className="map-mode-toggle" role="group" aria-label="Cena lub ocena">
+          <button
+            type="button"
+            className="map-mode-toggle-btn"
+            aria-pressed={mode === 'rating'}
+            aria-label="Pokaż oceny"
+            onClick={() => setMode('rating')}
+          >
+            <svg className="map-mode-toggle-star" viewBox="0 0 24 24" aria-hidden="true">
+              <path
+                d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"
+                fill="currentColor"
+              />
+            </svg>
+          </button>
+          <button
+            type="button"
+            className="map-mode-toggle-btn"
+            aria-pressed={mode === 'price'}
+            aria-label="Pokaż ceny"
+            onClick={() => setMode('price')}
+          >
+            <svg className="map-mode-toggle-dollar" viewBox="0 0 24 24" aria-hidden="true">
+              <text
+                x="12"
+                y="18"
+                textAnchor="middle"
+                fontSize="18"
+                fontFamily="Inter, sans-serif"
+                fontWeight="700"
+                fill="currentColor"
+              >
+                $
+              </text>
+            </svg>
+          </button>
+        </div>
         <button type="button" aria-label="Przybliż" onClick={() => mapRef.current?.zoomIn()}>
           +
         </button>
