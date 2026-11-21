@@ -2,6 +2,7 @@
 from fastapi import FastAPI
 
 from src.api import accounts, admin, bars, favorites, health, prices, ratings, top_month
+
 app = FastAPI(title="Gdziewypije API")
 
 app.include_router(health.router)
