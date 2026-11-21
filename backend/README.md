@@ -161,3 +161,4 @@ Większość testów wymaga działającej bazy z wgranym `01_schema.sql`. Testy 
 - `password authentication failed` – inne `DB_PASSWORD` w `backend/.env` niż w `.env` w katalogu głównym. Jeśli baza powstała ze starym hasłem, pomaga reset: `docker compose down -v` i ponownie krok 1.
 - `/health` zwraca 503 – kontener bazy nie działa (`docker compose up -d`) albo Docker Desktop jest wyłączony.
 - `port is already allocated` przy `docker compose up -d` – port 5432 zajmuje lokalny PostgreSQL; trzeba go zatrzymać albo zmienić `DB_PORT` w obu plikach `.env`.
+- `There was an error parsing the body` przy `curl` z polskimi znakami w `-d` (np. `Wrocław`) – Git Bash na Windows wysyła je w innym kodowaniu niż UTF-8; takie żądania lepiej wysłać ze Swaggera.
