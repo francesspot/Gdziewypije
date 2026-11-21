@@ -17,14 +17,12 @@ def put_rating(
     conn: psycopg.Connection = Depends(get_connection),
 ) -> dict:
     ensure_active_bar(conn, bar_id)
-    # T4: druga ocena tej samej osoby zastępuje pierwszą; is_active wraca, gdy wiersz był wyłączony
+    # T4: druga ocena tej samej osoby zastępuje pierwszą (klucz główny user_id, bar_id)
     return conn.execute(
         """
         INSERT INTO ratings (user_id, bar_id, value)
         VALUES (%s, %s, %s)
-        ON CONFLICT (user_id, bar_id) DO UPDATE SET
-            value = EXCLUDED.value,
-            is_active = true
+        ON CONFLICT (user_id, bar_id) DO UPDATE SET value = EXCLUDED.value
         RETURNING user_id, bar_id, value
         """,
         (user["id"], bar_id, data.value),
