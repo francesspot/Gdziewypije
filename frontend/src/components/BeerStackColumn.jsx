@@ -8,6 +8,10 @@ const WOBBLE = [
   { x: 0, deg: 0.4 },
 ]
 
+function formatAvgRating(avgRating) {
+  return avgRating == null ? '\u2013' : avgRating.toFixed(1)
+}
+
 function BeerStackColumn({ bar, mugCount }) {
   const mugs = Array.from({ length: mugCount }, (_, index) => index)
 
@@ -15,7 +19,7 @@ function BeerStackColumn({ bar, mugCount }) {
     <div className="beer-stack-column">
       <p className="beer-stack-label">
         <span className="beer-stack-name">{bar.name}</span>
-        <span className="beer-stack-meta">{bar.rating.toFixed(1)}</span>
+        <span className="beer-stack-meta">{formatAvgRating(bar.avg_rating)}</span>
       </p>
       <div className="beer-stack">
         {mugs.map((index) => {

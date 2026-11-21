@@ -81,3 +81,7 @@ export async function request(path, options = {}) {
 export function getBars() {
   return request('/bars')
 }
+
+export function getTopMonth() {
+  return request('/top-month')
+}
