@@ -18,6 +18,9 @@ class Settings(BaseSettings):
     jwt_secret: str
     jwt_expire_minutes: int = 1440
 
+    # Adres Overpass API używany przez import barów z OpenStreetMap (HTTPS sprawdza fetch_elements)
+    overpass_url: str = "https://overpass-api.de/api/interpreter"
+
 
 # Ustawienia wczytywane raz, przy pierwszym użyciu, a nie przy imporcie modułu
 @lru_cache
