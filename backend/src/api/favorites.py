@@ -3,17 +3,11 @@ import psycopg
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.api.dependencies import get_current_user
+from src.api.prices import ensure_active_bar
 from src.db.connection import get_connection
 from src.schemas.favorites import FavoriteResponse
 
 router = APIRouter(tags=["favorites"])
-
-
-def ensure_active_bar(conn: psycopg.Connection, bar_id: int) -> None:
-    # Wyłączony bar jest traktowany jak nieistniejący, bo znika z mapy i list
-    bar = conn.execute("SELECT 1 FROM bars WHERE id = %s AND is_active", (bar_id,)).fetchone()
-    if bar is None:
-        raise HTTPException(status_code=404, detail="Bar nie istnieje lub jest wyłączony")
 
 
 @router.post("/bars/{bar_id}/favorite", status_code=201, response_model=FavoriteResponse)
