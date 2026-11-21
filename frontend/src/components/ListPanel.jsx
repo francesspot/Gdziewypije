@@ -1,13 +1,39 @@
-import { useState } from 'react'
-import { PLACEHOLDER_BARS } from '../placeholderBars'
+import { useEffect, useState } from 'react'
+import { getBars } from '../api'
 import CloseArrow from './CloseArrow'
+
+function formatRating(avgRating) {
+  return avgRating == null ? '–' : avgRating.toFixed(1)
+}
 
 function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop }) {
   const [query, setQuery] = useState('')
+  const [bars, setBars] = useState([])
+  const [error, setError] = useState('')
   const normalized = query.trim().toLowerCase()
-  const visibleBars = PLACEHOLDER_BARS.filter((bar) =>
-    bar.name.toLowerCase().includes(normalized),
-  )
+  const visibleBars = bars.filter((bar) => bar.name.toLowerCase().includes(normalized))
+
+  useEffect(() => {
+    let cancelled = false
+
+    getBars()
+      .then((data) => {
+        if (!cancelled) {
+          setBars(data)
+          setError('')
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setBars([])
+          setError(err.message)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
 
   return (
     <aside
@@ -57,6 +83,11 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
           />
         </svg>
       </label>
+      {error ? (
+        <p className="list-error" role="alert">
+          {error}
+        </p>
+      ) : null}
       <ul className="bar-list">
         {visibleBars.map((bar) => {
           const isFavorite = favoriteIds.includes(bar.id)
@@ -82,7 +113,7 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
                 </svg>
               </button>
               <span className="bar-name">{bar.name}</span>
-              <span className="rating">{bar.rating.toFixed(1)}</span>
+              <span className="rating">{formatRating(bar.avg_rating)}</span>
             </li>
           )
         })}
