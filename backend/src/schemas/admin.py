@@ -32,7 +32,8 @@ class DrinkRequest(BaseModel):
     name: str = Field(min_length=1)
     # Te same wartości co CHECK w drinks
     category: Literal["beer", "cocktail", "shot", "wine"]
-    volume_ml: int = Field(gt=0)
+    # Górna granica to zakres kolumny integer; większa liczba kończyłaby się błędem bazy (500) zamiast 422
+    volume_ml: int = Field(gt=0, le=2_147_483_647)
 
 
 class DrinkResponse(BaseModel):
