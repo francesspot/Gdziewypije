@@ -1,4 +1,4 @@
-# Testy oceny baru (T4, PU.04): zastąpienie, 422 poza 1–5, 401, 404.
+# Testy oceny baru (T4, PU.04): zastąpienie, 422 dla błędnej wartości, 401, 404.
 # Wymagają działającej bazy (docker compose up -d) i pliku backend/.env.
 import uuid
 
@@ -81,7 +81,7 @@ def test_second_rating_from_same_user_replaces_first(client, bar, user):
         {"value": 5.0},
     ],
 )
-def test_rating_outside_1_to_5_returns_422(client, bar, user, body):
+def test_invalid_rating_returns_422(client, bar, user, body):
     response = client.put(f"/bars/{bar}/rating", json=body, headers=user["headers"])
 
     assert response.status_code == 422
