@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from src.db.connection import get_connection
 from src.schemas.bars import BarResponse, NearbyBarResponse, RankingBarResponse
+from src.schemas.text import NoNulStr
 
 router = APIRouter(tags=["bars"])
 
@@ -52,7 +53,7 @@ def attach_prices(conn: psycopg.Connection, bars: list[dict]) -> list[dict]:
 
 @router.get("/bars", response_model=list[BarResponse])
 def list_bars(
-    q: str | None = Query(default=None),
+    q: NoNulStr | None = Query(default=None),
     conn: psycopg.Connection = Depends(get_connection),
 ) -> list[dict]:
     query = q.strip() if q else ""

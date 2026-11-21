@@ -81,6 +81,26 @@ def test_register_invalid_data_returns_422(client):
     assert fields == {"email", "password", "display_name"}
 
 
+def test_register_text_with_nul_returns_422(client):
+    # Znak NUL w tekście kończyłby się błędem psycopg (500), więc odrzuca go walidacja
+    response = client.post(
+        "/auth/register",
+        json={"email": "jan\x00@test.pl", "password": PASSWORD, "display_name": "Jan\x00"},
+    )
+
+    assert response.status_code == 422
+    errors = response.json()["detail"]
+    assert {error["loc"][-1] for error in errors} == {"email", "display_name"}
+    assert errors[0]["msg"] == "Value error, Tekst nie może zawierać znaku NUL (\\x00)"
+
+
+def test_login_email_with_nul_returns_422(client):
+    response = client.post("/auth/login", json={"email": "jan\x00@test.pl", "password": PASSWORD})
+
+    assert response.status_code == 422
+    assert [error["loc"] for error in response.json()["detail"]] == [["body", "email"]]
+
+
 def test_login_returns_token(client, email):
     register(client, email)
 

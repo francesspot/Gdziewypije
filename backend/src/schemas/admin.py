@@ -3,14 +3,16 @@ from typing import Literal
 
 from pydantic import BaseModel, ConfigDict, Field
 
+from src.schemas.text import NoNulStr
+
 
 class BarRequest(BaseModel):
     # Ten sam model przy dodaniu i edycji: edycja zastępuje wszystkie pola baru
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    name: str = Field(min_length=1)
-    address: str | None = None
-    opening_hours: str | None = None
+    name: NoNulStr = Field(min_length=1)
+    address: NoNulStr | None = None
+    opening_hours: NoNulStr | None = None
     # Współrzędne GPS w stopniach, w bazie zapisywane jako punkt geography (4326)
     latitude: float = Field(ge=-90, le=90)
     longitude: float = Field(ge=-180, le=180)
@@ -29,7 +31,7 @@ class BarResponse(BaseModel):
 class DrinkRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    name: str = Field(min_length=1)
+    name: NoNulStr = Field(min_length=1)
     # Te same wartości co CHECK w drinks
     category: Literal["beer", "cocktail", "shot", "wine"]
     # Górna granica to zakres kolumny integer; większa liczba kończyłaby się błędem bazy (500) zamiast 422

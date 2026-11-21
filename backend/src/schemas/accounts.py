@@ -1,6 +1,8 @@
 # Modele danych dla rejestracji, logowania i konta użytkownika.
 from pydantic import BaseModel, ConfigDict, Field, field_validator
 
+from src.schemas.text import NoNulStr
+
 # Uproszczone sprawdzenie e-maila: tekst@domena.końcówka, bez spacji
 EMAIL_PATTERN = r"^[^@\s]+@[^@\s]+\.[^@\s]+$"
 
@@ -9,10 +11,11 @@ class RegisterRequest(BaseModel):
     # Spacje na początku i końcu są obcinane przed walidacją
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    email: str = Field(pattern=EMAIL_PATTERN)
+    email: NoNulStr = Field(pattern=EMAIL_PATTERN)
+    # Hasło trafia do bazy tylko jako hash, więc NUL w nim nie przeszkadza
     password: str = Field(min_length=8)
     # PU.01 (3b): nazwa krótsza niż 2 znaki jest odrzucana, tak samo jak CHECK w user_profiles
-    display_name: str = Field(min_length=2)
+    display_name: NoNulStr = Field(min_length=2)
 
     # Małe litery, żeby Jan@x.pl i jan@x.pl były tym samym kontem (UNIQUE w bazie rozróżnia wielkość liter)
     @field_validator("email")
@@ -24,7 +27,7 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    email: str
+    email: NoNulStr
     password: str
 
     @field_validator("email")
