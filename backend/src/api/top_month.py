@@ -15,7 +15,15 @@ Q3_TOP_MONTH = """
 """
 
 
-@router.get("/top-month", response_model=list[TopMonthBarResponse])
+@router.get(
+    "/top-month",
+    response_model=list[TopMonthBarResponse],
+    summary="Top 3 miesiąca",
+    description=(
+        "Zwraca do 3 barów z największą liczbą ocen i dodań do ulubionych w bieżącym miesiącu (Q3, WF.16). "
+        "Bar musi mieć co najmniej 3 takie zdarzenia, a przy remisie decyduje średnia ocena."
+    ),
+)
 def top_month(conn: psycopg.Connection = Depends(get_connection)) -> list[dict]:
     # Widok już filtruje aktywne bary i HAVING count(*) >= 3; brak wierszy to pusta lista (200)
     return conn.execute(Q3_TOP_MONTH).fetchall()

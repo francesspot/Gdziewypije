@@ -30,7 +30,15 @@ def fetch_current_price(conn: psycopg.Connection, price_id: int) -> dict | None:
     ).fetchone()
 
 
-@router.get("/bars/{bar_id}/prices", response_model=list[PriceResponse])
+@router.get(
+    "/bars/{bar_id}/prices",
+    response_model=list[PriceResponse],
+    summary="Aktualne ceny baru",
+    description=(
+        "Zwraca najnowszą cenę każdego napoju w barze. Cena bez potwierdzenia od 90 dni "
+        "ma `needs_verification = true`. Pusta lista oznacza brak danych (WF.04). Brak baru daje 404."
+    ),
+)
 def current_prices(bar_id: int, conn: psycopg.Connection = Depends(get_connection)) -> list[dict]:
     ensure_active_bar(conn, bar_id)
     # Pusta lista oznacza bar bez cen, frontend pokazuje wtedy „brak danych” (WF.04)
@@ -46,7 +54,16 @@ def current_prices(bar_id: int, conn: psycopg.Connection = Depends(get_connectio
     ).fetchall()
 
 
-@router.post("/bars/{bar_id}/prices", status_code=201, response_model=PriceResponse)
+@router.post(
+    "/bars/{bar_id}/prices",
+    status_code=201,
+    response_model=PriceResponse,
+    summary="Zgłoszenie ceny",
+    description=(
+        "Zapisuje nową cenę napoju w barze i dodaje autorowi 5 punktów (T2, PU.02). Wymaga logowania. "
+        "Brak baru lub napoju daje 404."
+    ),
+)
 def report_price(
     bar_id: int,
     data: PriceReportRequest,
@@ -68,7 +85,17 @@ def report_price(
     return fetch_current_price(conn, row["id"])
 
 
-@router.post("/prices/{price_id}/confirmations", status_code=201, response_model=PriceResponse)
+@router.post(
+    "/prices/{price_id}/confirmations",
+    status_code=201,
+    response_model=PriceResponse,
+    summary="Potwierdzenie ceny",
+    description=(
+        "`kind = confirm` potwierdza cenę: odświeża jej datę i daje 1 punkt. "
+        "`kind = change` zgłasza, że cena jest inna, bez punktu (T3, PU.03). Wymaga logowania. "
+        "Cena nieaktualna daje 404, drugie potwierdzenie z tego samego konta daje 409."
+    ),
+)
 def confirm_price(
     price_id: int,
     data: PriceConfirmRequest,

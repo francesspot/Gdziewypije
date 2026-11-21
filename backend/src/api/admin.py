@@ -19,7 +19,13 @@ BAR_COLUMNS = """
 """
 
 
-@router.post("/bars", status_code=201, response_model=BarResponse)
+@router.post(
+    "/bars",
+    status_code=201,
+    response_model=BarResponse,
+    summary="Dodanie baru",
+    description="Dodaje bar spoza OpenStreetMap. Wymaga konta administratora.",
+)
 def create_bar(data: BarRequest, conn: psycopg.Connection = Depends(get_connection)) -> dict:
     # ST_MakePoint przyjmuje najpierw długość, potem szerokość geograficzną.
     # Bar dodany ręcznie nie ma odpowiednika w OSM, więc osm_type i osm_id zostają puste.
@@ -33,7 +39,12 @@ def create_bar(data: BarRequest, conn: psycopg.Connection = Depends(get_connecti
     ).fetchone()
 
 
-@router.put("/bars/{bar_id}", response_model=BarResponse)
+@router.put(
+    "/bars/{bar_id}",
+    response_model=BarResponse,
+    summary="Edycja baru",
+    description="Zastępuje wszystkie pola baru. Wymaga konta administratora. Brak baru daje 404.",
+)
 def update_bar(bar_id: int, data: BarRequest, conn: psycopg.Connection = Depends(get_connection)) -> dict:
     # Edycja zastępuje wszystkie pola baru; updated_at ustawia wyzwalacz
     row = conn.execute(
@@ -51,7 +62,15 @@ def update_bar(bar_id: int, data: BarRequest, conn: psycopg.Connection = Depends
     return row
 
 
-@router.patch("/bars/{bar_id}", response_model=BarResponse)
+@router.patch(
+    "/bars/{bar_id}",
+    response_model=BarResponse,
+    summary="Włączenie lub wyłączenie baru",
+    description=(
+        "Ustawia `is_active`. Wyłączony bar znika z mapy, list i rankingów, ale zostaje w bazie. "
+        "Wymaga konta administratora."
+    ),
+)
 def set_bar_active(bar_id: int, data: ActiveRequest, conn: psycopg.Connection = Depends(get_connection)) -> dict:
     # Wyłączony bar znika z widoków (v_bar_stats, v_current_prices, v_top_month), ale zostaje w bazie
     row = conn.execute(
@@ -69,7 +88,16 @@ DRINK_COLUMNS = "id, name, category, volume_ml, is_active"
 DUPLICATE_DRINK = "Napój o tej nazwie i pojemności już istnieje"
 
 
-@router.post("/drinks", status_code=201, response_model=DrinkResponse)
+@router.post(
+    "/drinks",
+    status_code=201,
+    response_model=DrinkResponse,
+    summary="Dodanie napoju",
+    description=(
+        "Dodaje napój do słownika. Wymaga konta administratora. "
+        "Napój o tej samej nazwie i pojemności daje 409."
+    ),
+)
 def create_drink(data: DrinkRequest, conn: psycopg.Connection = Depends(get_connection)) -> dict:
     try:
         return conn.execute(
@@ -80,7 +108,15 @@ def create_drink(data: DrinkRequest, conn: psycopg.Connection = Depends(get_conn
         raise HTTPException(status_code=409, detail=DUPLICATE_DRINK)
 
 
-@router.put("/drinks/{drink_id}", response_model=DrinkResponse)
+@router.put(
+    "/drinks/{drink_id}",
+    response_model=DrinkResponse,
+    summary="Edycja napoju",
+    description=(
+        "Zastępuje wszystkie pola napoju. Wymaga konta administratora. "
+        "Brak napoju daje 404, duplikat nazwy i pojemności daje 409."
+    ),
+)
 def update_drink(drink_id: int, data: DrinkRequest, conn: psycopg.Connection = Depends(get_connection)) -> dict:
     # Edycja może zderzyć się z innym napojem, np. po zmianie pojemności na już istniejącą
     try:
@@ -99,7 +135,15 @@ def update_drink(drink_id: int, data: DrinkRequest, conn: psycopg.Connection = D
     return row
 
 
-@router.patch("/drinks/{drink_id}", response_model=DrinkResponse)
+@router.patch(
+    "/drinks/{drink_id}",
+    response_model=DrinkResponse,
+    summary="Włączenie lub wyłączenie napoju",
+    description=(
+        "Ustawia `is_active`. Ceny wyłączonego napoju znikają z barów, a nowych nie da się zgłosić. "
+        "Wymaga konta administratora."
+    ),
+)
 def set_drink_active(drink_id: int, data: ActiveRequest, conn: psycopg.Connection = Depends(get_connection)) -> dict:
     # Ceny wyłączonego napoju znikają z v_current_prices, a report_price odrzuca nowe zgłoszenia
     row = conn.execute(

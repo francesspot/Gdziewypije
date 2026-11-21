@@ -9,7 +9,15 @@ from src.schemas.ratings import RatingRequest, RatingResponse
 
 router = APIRouter(tags=["ratings"])
 
-@router.put("/bars/{bar_id}/rating", response_model=RatingResponse)
+@router.put(
+    "/bars/{bar_id}/rating",
+    response_model=RatingResponse,
+    summary="Ocena baru",
+    description=(
+        "Wystawia ocenę 1–5, a kolejna ocena tej samej osoby zastępuje poprzednią (T4, PU.04). "
+        "Wymaga logowania. Brak baru daje 404."
+    ),
+)
 def put_rating(
     bar_id: int,
     data: RatingRequest,

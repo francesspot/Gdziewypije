@@ -10,7 +10,16 @@ from src.security import create_access_token, hash_password, verify_password
 router = APIRouter(prefix="/auth", tags=["accounts"])
 
 
-@router.post("/register", status_code=201, response_model=TokenResponse)
+@router.post(
+    "/register",
+    status_code=201,
+    response_model=TokenResponse,
+    summary="Rejestracja konta",
+    description=(
+        "Zakłada konto i profil użytkownika (T1, PU.01) i od razu zwraca token. "
+        "Zajęty e-mail daje 409."
+    ),
+)
 def register(data: RegisterRequest, conn: psycopg.Connection = Depends(get_connection)) -> dict:
     # T1: register_user zapisuje konto i profil w jednej transakcji żądania
     try:
@@ -25,7 +34,12 @@ def register(data: RegisterRequest, conn: psycopg.Connection = Depends(get_conne
     return {"access_token": create_access_token(row["id"]), "user": fetch_user(conn, row["id"])}
 
 
-@router.post("/login", response_model=TokenResponse)
+@router.post(
+    "/login",
+    response_model=TokenResponse,
+    summary="Logowanie",
+    description="Zwraca token dla poprawnego e-maila i hasła. Zły e-mail lub hasło daje 401.",
+)
 def login(data: LoginRequest, conn: psycopg.Connection = Depends(get_connection)) -> dict:
     row = conn.execute(
         "SELECT id, password_hash FROM users WHERE email = %s AND is_active",
@@ -37,6 +51,11 @@ def login(data: LoginRequest, conn: psycopg.Connection = Depends(get_connection)
     return {"access_token": create_access_token(row["id"]), "user": fetch_user(conn, row["id"])}
 
 
-@router.get("/me", response_model=UserResponse)
+@router.get(
+    "/me",
+    response_model=UserResponse,
+    summary="Dane zalogowanego użytkownika",
+    description="Zwraca id, e-mail, rolę i nazwę wyświetlaną właściciela tokenu. Wymaga logowania.",
+)
 def me(user: dict = Depends(get_current_user)) -> dict:
     return user
