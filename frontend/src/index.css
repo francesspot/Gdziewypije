@@ -1,0 +1,20 @@
+* {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+
+body {
+  font-family: var(--font-sans);
+  color: var(--ink-oak);
+}
+
+button,
+input {
+  font-family: inherit;
+}

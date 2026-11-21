@@ -1,0 +1,63 @@
+import { useState } from 'react'
+import ListPanel from './components/ListPanel'
+import MapScreen from './components/MapScreen'
+import TopPanel from './components/TopPanel'
+import './App.css'
+
+function App() {
+  const [topOpen, setTopOpen] = useState(false)
+  const [listOpen, setListOpen] = useState(false)
+  const [favoriteIds, setFavoriteIds] = useState([])
+
+  function toggleFavorite(barId) {
+    setFavoriteIds((current) =>
+      current.includes(barId) ? current.filter((id) => id !== barId) : [...current, barId],
+    )
+  }
+
+  return (
+    <div
+      className={[
+        'app',
+        topOpen ? 'app-top-open' : '',
+        listOpen ? 'app-list-open' : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
+    >
+      <svg className="sketch-filter" aria-hidden="true">
+        <filter id="sketch">
+          <feTurbulence type="fractalNoise" baseFrequency="0.9" numOctaves="1" result="noise" />
+          <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.1" />
+        </filter>
+      </svg>
+      <MapScreen
+        topOpen={topOpen}
+        listOpen={listOpen}
+        favoriteIds={favoriteIds}
+        onOpenTop={() => setTopOpen(true)}
+        onOpenList={() => setListOpen(true)}
+      />
+      <TopPanel
+        open={topOpen}
+        onClose={() => setTopOpen(false)}
+        onSwitchToList={() => {
+          setTopOpen(false)
+          setListOpen(true)
+        }}
+      />
+      <ListPanel
+        open={listOpen}
+        favoriteIds={favoriteIds}
+        onToggleFavorite={toggleFavorite}
+        onClose={() => setListOpen(false)}
+        onSwitchToTop={() => {
+          setListOpen(false)
+          setTopOpen(true)
+        }}
+      />
+    </div>
+  )
+}
+
+export default App
