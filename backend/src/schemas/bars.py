@@ -21,3 +21,8 @@ class BarResponse(BaseModel):
 class RankingBarResponse(BarResponse):
     # miejsce z RANK() w zapytaniu Q2
     rank: int
+
+
+class NearbyBarResponse(BarResponse):
+    # ST_Distance w metrach (Q1)
+    distance_m: float
