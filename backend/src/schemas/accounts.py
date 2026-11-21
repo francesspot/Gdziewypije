@@ -11,11 +11,12 @@ class RegisterRequest(BaseModel):
     # Spacje na początku i końcu są obcinane przed walidacją
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    email: NoNulStr = Field(pattern=EMAIL_PATTERN)
+    # examples ustawia przykład w Swaggerze; bez niego Swagger generuje tekst niepasujący do wzorca
+    email: NoNulStr = Field(pattern=EMAIL_PATTERN, examples=["jan@test.pl"])
     # Hasło trafia do bazy tylko jako hash, więc NUL w nim nie przeszkadza
-    password: str = Field(min_length=8)
+    password: str = Field(min_length=8, examples=["haslo1234"])
     # PU.01 (3b): nazwa krótsza niż 2 znaki jest odrzucana, tak samo jak CHECK w user_profiles
-    display_name: NoNulStr = Field(min_length=2)
+    display_name: NoNulStr = Field(min_length=2, examples=["Jan"])
 
     # Małe litery, żeby Jan@x.pl i jan@x.pl były tym samym kontem (UNIQUE w bazie rozróżnia wielkość liter)
     @field_validator("email")
@@ -27,8 +28,8 @@ class RegisterRequest(BaseModel):
 class LoginRequest(BaseModel):
     model_config = ConfigDict(str_strip_whitespace=True)
 
-    email: NoNulStr
-    password: str
+    email: NoNulStr = Field(examples=["jan@test.pl"])
+    password: str = Field(examples=["haslo1234"])
 
     @field_validator("email")
     @classmethod

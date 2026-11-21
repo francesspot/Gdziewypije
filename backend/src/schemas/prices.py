@@ -7,10 +7,11 @@ from pydantic import BaseModel, Field
 
 
 class PriceReportRequest(BaseModel):
-    drink_id: int
+    drink_id: int = Field(examples=[1])
     # WF.11, PU.02 (3a): cena musi być większa od 0, tak samo jak CHECK w prices.
     # Decimal i limity cyfr odpowiadają kolumnie numeric(8, 2), więc za długa liczba daje 422, a nie błąd bazy.
-    amount: Decimal = Field(gt=0, max_digits=8, decimal_places=2)
+    # Przykład jako liczba, bo Swagger pokazuje Decimal jako „liczba albo tekst” i generuje nieczytelny przykład
+    amount: Decimal = Field(gt=0, max_digits=8, decimal_places=2, examples=[12.5])
 
 
 class PriceConfirmRequest(BaseModel):
