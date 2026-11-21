@@ -441,6 +441,11 @@
   pointer-events: none;
 }
 
+.list-error {
+  margin: 0 0 1rem;
+  color: var(--accent-brick);
+}
+
 .bar-list {
   margin: 0;
   padding: 0;
