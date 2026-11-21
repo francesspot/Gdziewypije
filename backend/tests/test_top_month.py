@@ -4,7 +4,8 @@ import uuid
 
 import pytest
 
-from src.db.connection import connect
+from src.db.connection import connect, get_connection
+from src.main import app
 
 
 @pytest.fixture
@@ -117,19 +118,18 @@ def test_top_month_includes_bar_with_three_events_this_month(client, tag):
 
 
 def test_top_month_empty_list_when_no_active_bars(client):
-    with connect() as conn:
-        active_ids = [
-            row["id"]
-            for row in conn.execute("SELECT id FROM bars WHERE is_active").fetchall()
-        ]
-        if active_ids:
-            conn.execute("UPDATE bars SET is_active = false WHERE id = ANY(%s)", (active_ids,))
+    # Bary wyłącza się w transakcji bez zatwierdzenia, więc po teście baza zostaje bez zmian
+    def connection_without_bars():
+        with connect() as conn:
+            conn.execute("UPDATE bars SET is_active = false")
+            yield conn
+            conn.rollback()
+
+    app.dependency_overrides[get_connection] = connection_without_bars
     try:
         response = client.get("/top-month")
     finally:
-        if active_ids:
-            with connect() as conn:
-                conn.execute("UPDATE bars SET is_active = true WHERE id = ANY(%s)", (active_ids,))
+        app.dependency_overrides.clear()
 
     assert response.status_code == 200
     assert response.json() == []
