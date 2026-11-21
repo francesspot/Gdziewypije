@@ -150,6 +150,15 @@ def test_invalid_bar_returns_422(client, admin_headers):
     assert fields == {"name", "latitude", "longitude"}
 
 
+def test_bar_text_with_nul_returns_422(client, admin_headers, tag):
+    data = bar_data(tag, name=f"{tag}\x00", address="Rynek\x00", opening_hours="24/7\x00")
+    response = client.post("/admin/bars", json=data, headers=admin_headers)
+
+    assert response.status_code == 422
+    fields = {error["loc"][-1] for error in response.json()["detail"]}
+    assert fields == {"name", "address", "opening_hours"}
+
+
 def test_disabled_bar_disappears_from_views(client, admin_headers, tag):
     bar_id = client.post("/admin/bars", json=bar_data(tag), headers=admin_headers).json()["id"]
     drink_id = client.post("/admin/drinks", json=drink_data(tag), headers=admin_headers).json()["id"]
@@ -253,6 +262,20 @@ def test_invalid_drink_returns_422(client, admin_headers):
     assert response.status_code == 422
     fields = {error["loc"][-1] for error in response.json()["detail"]}
     assert fields == {"name", "category", "volume_ml"}
+
+
+def test_drink_volume_above_integer_range_returns_422(client, admin_headers, tag):
+    response = client.post("/admin/drinks", json=drink_data(tag, volume_ml=2_147_483_648), headers=admin_headers)
+
+    assert response.status_code == 422
+    assert [error["loc"] for error in response.json()["detail"]] == [["body", "volume_ml"]]
+
+
+def test_drink_name_with_nul_returns_422(client, admin_headers, tag):
+    response = client.post("/admin/drinks", json=drink_data(tag, name=f"{tag}\x00"), headers=admin_headers)
+
+    assert response.status_code == 422
+    assert [error["loc"] for error in response.json()["detail"]] == [["body", "name"]]
 
 
 def test_disabled_drink_disappears_from_current_prices(client, admin_headers, tag):
