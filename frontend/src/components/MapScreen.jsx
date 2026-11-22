@@ -21,6 +21,7 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
   const markersLayerRef = useRef(null)
+  const userMovedMapRef = useRef(false)
   const [fetchError, setFetchError] = useState('')
 
   // Parametr zostaje dla późniejszych ulubionych; odwołanie gasi ostrzeżenie o nieużyciu.
@@ -45,6 +46,11 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
 
     // Prawy dolny róg zajmują kontrolki i panel listy, a źródło danych ma być widoczne (WNF.09).
     map.attributionControl.setPosition('bottomleft')
+
+    // Przesunięcie albo zoom przed odpowiedzią API blokuje późniejsze fitBounds.
+    map.on('dragstart zoomstart', () => {
+      userMovedMapRef.current = true
+    })
 
     mapRef.current = map
 
@@ -74,19 +80,18 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
         const boundsPoints = []
 
         for (const bar of bars) {
-          const { latitude, longitude } = bar
-          if (latitude == null || longitude == null) {
-            continue
-          }
-          L.marker([latitude, longitude]).addTo(layer)
-          boundsPoints.push([latitude, longitude])
+          const point = [bar.latitude, bar.longitude]
+          // title daje podpowiedź po najechaniu, alt nazwę dla czytnika ekranu.
+          L.marker(point, { title: bar.name, alt: bar.name }).addTo(layer)
+          boundsPoints.push(point)
         }
 
         layer.addTo(map)
         markersLayerRef.current = layer
 
-        if (boundsPoints.length > 0) {
-          map.fitBounds(boundsPoints, { padding: [40, 40] })
+        if (boundsPoints.length > 0 && !userMovedMapRef.current) {
+          // maxZoom ogranicza przybliżenie, gdy jest tylko jeden bar.
+          map.fitBounds(boundsPoints, { padding: [40, 40], maxZoom: 16 })
         }
       })
       .catch((err) => {
