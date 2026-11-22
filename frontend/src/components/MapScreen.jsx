@@ -54,8 +54,7 @@ function cheapestPriceAmount(prices) {
   return min
 }
 
-function formatMarkerPriceLabel(prices) {
-  const amount = cheapestPriceAmount(prices)
+function formatMarkerPrice(amount) {
   if (amount == null) {
     return 'brak danych'
   }
@@ -76,9 +75,9 @@ function createBarMarkerIcon(mode, bar) {
     iconWidth = BAR_MARKER_ICON_WIDTH_RATING
   } else {
     leadingSvg = BAR_MARKER_DOLLAR_SVG
-    const rawLabel = formatMarkerPriceLabel(bar.prices)
-    labelText = escapeHtml(rawLabel)
-    iconWidth = rawLabel === 'brak danych' ? BAR_MARKER_ICON_WIDTH_NO_DATA : BAR_MARKER_ICON_WIDTH_PRICE
+    const amount = cheapestPriceAmount(bar.prices)
+    labelText = escapeHtml(formatMarkerPrice(amount))
+    iconWidth = amount == null ? BAR_MARKER_ICON_WIDTH_NO_DATA : BAR_MARKER_ICON_WIDTH_PRICE
   }
 
   // alt działa w Leaflet tylko dla ikon <img>, więc nazwę dla czytnika ekranu niesie ukryty tekst.
@@ -98,7 +97,6 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
   const mapRef = useRef(null)
   const markersLayerRef = useRef(null)
   const userMovedMapRef = useRef(false)
-  const barsRef = useRef([])
   const fitBoundsDoneRef = useRef(false)
   const [mapReady, setMapReady] = useState(false)
   const [bars, setBars] = useState([])
@@ -145,11 +143,11 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
 
     getBars()
       .then((fetchedBars) => {
+        // Odpowiedź po odmontowaniu (np. StrictMode) nie aktualizuje stanu.
         if (cancelled) {
           return
         }
         setFetchError('')
-        barsRef.current = fetchedBars
         setBars(fetchedBars)
       })
       .catch((err) => {
@@ -172,11 +170,7 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
       return
     }
 
-    const previousLayer = markersLayerRef.current
-    if (previousLayer) {
-      map.removeLayer(previousLayer)
-    }
-
+    // Poprzednią warstwę usuwa cleanup tego efektu przed kolejnym uruchomieniem.
     const layer = L.layerGroup()
     const boundsPoints = []
 
