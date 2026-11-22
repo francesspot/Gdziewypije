@@ -129,6 +129,11 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
       userMovedMapRef.current = true
     })
 
+    // Kliknięcie markera nie dociera do mapy (bubblingMouseEvents: false), więc to tylko klik w puste miejsce.
+    map.on('click', () => {
+      setSelectedBarId(null)
+    })
+
     mapRef.current = map
     setMapReady(true)
 
