@@ -5,6 +5,13 @@ function formatRating(avgRating) {
   return avgRating == null ? 'brak ocen' : avgRating.toFixed(1)
 }
 
+function formatPrice(amount) {
+  return `${amount.toLocaleString('pl-PL', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })} zł`
+}
+
 // Komponent dostaje key={barId}, więc wybór innego baru montuje go od nowa ze stanem ładowania.
 function BarPopup({ barId, onClose }) {
   const [bar, setBar] = useState(null)
@@ -60,6 +67,30 @@ function BarPopup({ barId, onClose }) {
           <span className="bar-popup-rating-value">Ocena: {formatRating(bar.avg_rating)}</span>
           <span className="bar-popup-rating-count">liczba ocen: {bar.ratings_count}</span>
         </p>
+      ) : null}
+      {bar ? (
+        <>
+          <h3 className="bar-popup-prices-title">Ceny</h3>
+          {/* Pusta lista z backendu oznacza bar bez cen (WF.04). */}
+          {bar.prices.length === 0 ? (
+            <p className="bar-popup-no-prices">brak danych</p>
+          ) : (
+            <ul className="bar-popup-prices">
+              {bar.prices.map((price) => (
+                <li key={price.price_id}>
+                  <span className="bar-popup-drink">
+                    {price.drink_name} {price.volume_ml} ml
+                  </span>
+                  <span className="bar-popup-amount">{formatPrice(price.amount)}</span>
+                  {/* needs_verification liczy backend: brak potwierdzenia od 90 dni. */}
+                  {price.needs_verification ? (
+                    <span className="bar-popup-verify">do weryfikacji</span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </>
       ) : null}
     </section>
   )

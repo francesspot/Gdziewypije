@@ -181,6 +181,52 @@
   font-size: 0.9rem;
 }
 
+.bar-popup-prices-title {
+  margin: 0.8rem 0 0.35rem;
+  font-size: 1rem;
+}
+
+.bar-popup-no-prices {
+  margin: 0;
+}
+
+/* Przy wielu napojach przewija się sama lista, a okienko nie zasłania całej mapy. */
+.bar-popup-prices {
+  max-height: 12rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  overflow-y: auto;
+}
+
+.bar-popup-prices li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.6rem;
+}
+
+.bar-popup-drink {
+  flex: 1;
+}
+
+.bar-popup-amount {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bar-popup-verify {
+  padding: 0.05rem 0.5rem;
+  border: 2px solid var(--accent-brick);
+  border-radius: 999px;
+  color: var(--accent-brick);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
 .edge-button {
   position: absolute;
   /* Taki sam offset jak przyciski strzałek w nagłówkach paneli. */
