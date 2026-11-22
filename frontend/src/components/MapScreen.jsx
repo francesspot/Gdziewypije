@@ -1,16 +1,121 @@
-import { PLACEHOLDER_BARS } from '../placeholderBars'
+import { useEffect, useRef, useState } from 'react'
+import L from 'leaflet'
+import 'leaflet/dist/leaflet.css'
+import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
+import markerIcon from 'leaflet/dist/images/marker-icon.png'
+import markerShadow from 'leaflet/dist/images/marker-shadow.png'
+import { getBars } from '../api'
 
-const PIN_POSITIONS = {
-  1: { top: '58%', left: '54%' },
-  2: { top: '44%', left: '40%' },
-  3: { top: '68%', left: '48%' },
-}
+const WROCLAW_CENTER = [51.11, 17.04]
+const INITIAL_ZOOM = 13
 
-function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
+// Vite nie serwuje domyślnych ścieżek ikon Leaflet.
+delete L.Icon.Default.prototype._getIconUrl
+L.Icon.Default.mergeOptions({
+  iconUrl: markerIcon,
+  iconRetinaUrl: markerIcon2x,
+  shadowUrl: markerShadow,
+})
+
+function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
+  const mapContainerRef = useRef(null)
+  const mapRef = useRef(null)
+  const markersLayerRef = useRef(null)
+  const userMovedMapRef = useRef(false)
+  const [fetchError, setFetchError] = useState('')
+
+  useEffect(() => {
+    if (!mapContainerRef.current) {
+      return
+    }
+
+    const map = L.map(mapContainerRef.current, {
+      center: WROCLAW_CENTER,
+      zoom: INITIAL_ZOOM,
+      zoomControl: false,
+    })
+
+    L.tileLayer('https://tile.openstreetmap.org/{z}/{x}/{y}.png', {
+      maxZoom: 19,
+      attribution:
+        '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
+    }).addTo(map)
+
+    // Prawy dolny róg zajmują kontrolki i panel listy, a źródło danych ma być widoczne (WNF.09).
+    map.attributionControl.setPosition('bottomleft')
+
+    // Przesunięcie albo zoom przed odpowiedzią API blokuje późniejsze fitBounds.
+    map.on('dragstart zoomstart', () => {
+      userMovedMapRef.current = true
+    })
+
+    mapRef.current = map
+
+    return () => {
+      map.remove()
+      mapRef.current = null
+    }
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+
+    getBars()
+      .then((bars) => {
+        // Odpowiedź po odmontowaniu (np. StrictMode) nie aktualizuje mapy.
+        if (cancelled) {
+          return
+        }
+        const map = mapRef.current
+        if (!map) {
+          return
+        }
+
+        setFetchError('')
+
+        const layer = L.layerGroup()
+        const boundsPoints = []
+
+        for (const bar of bars) {
+          const point = [bar.latitude, bar.longitude]
+          // title daje podpowiedź po najechaniu, alt nazwę dla czytnika ekranu.
+          L.marker(point, { title: bar.name, alt: bar.name }).addTo(layer)
+          boundsPoints.push(point)
+        }
+
+        layer.addTo(map)
+        markersLayerRef.current = layer
+
+        if (boundsPoints.length > 0 && !userMovedMapRef.current) {
+          // maxZoom ogranicza przybliżenie, gdy jest tylko jeden bar.
+          map.fitBounds(boundsPoints, { padding: [40, 40], maxZoom: 16 })
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setFetchError(err.message)
+        }
+      })
+
+    return () => {
+      cancelled = true
+      const map = mapRef.current
+      const layer = markersLayerRef.current
+      if (map && layer) {
+        map.removeLayer(layer)
+      }
+      markersLayerRef.current = null
+    }
+  }, [])
+
   return (
     <section className="map-screen" aria-label="Mapa">
-      <div className="map-canvas" aria-hidden="true" />
-      <p className="map-placeholder">Mapa</p>
+      {fetchError ? (
+        <p className="map-fetch-error" role="alert">
+          {fetchError}
+        </p>
+      ) : null}
+      <div className="map-canvas" ref={mapContainerRef} />
       {!topOpen ? (
         <button className="edge-button edge-button-left" type="button" onClick={onOpenTop}>
           TOP
@@ -21,30 +126,11 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
           Lista
         </button>
       ) : null}
-      {PLACEHOLDER_BARS.filter((bar) => favoriteIds.includes(bar.id)).map((bar) => (
-        <div
-          key={bar.id}
-          className="map-pin"
-          style={PIN_POSITIONS[bar.id]}
-          title={bar.name}
-        >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <path
-              d="M12 3.2 14.6 8.8 20.8 9.4 16.2 13.6 17.6 19.8 12 16.8 6.4 19.8 7.8 13.6 3.2 9.4 9.4 8.8 Z"
-              fill="var(--accent-magenta)"
-              stroke="var(--ink-oak)"
-              strokeWidth="2.5"
-              strokeLinejoin="round"
-              strokeLinecap="round"
-            />
-          </svg>
-        </div>
-      ))}
       <div className="map-controls" aria-label="Kontrolki mapy">
-        <button type="button" aria-label="Przybliż">
+        <button type="button" aria-label="Przybliż" onClick={() => mapRef.current?.zoomIn()}>
           +
         </button>
-        <button type="button" aria-label="Oddal">
+        <button type="button" aria-label="Oddal" onClick={() => mapRef.current?.zoomOut()}>
           −
         </button>
         <button className="map-locate" type="button" aria-label="Moja lokalizacja">

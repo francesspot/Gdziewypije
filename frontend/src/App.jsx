@@ -34,7 +34,6 @@ function App() {
       <MapScreen
         topOpen={topOpen}
         listOpen={listOpen}
-        favoriteIds={favoriteIds}
         onOpenTop={() => setTopOpen(true)}
         onOpenList={() => setListOpen(true)}
       />
