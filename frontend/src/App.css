@@ -417,7 +417,8 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* minmax(0, 1fr): długie słowo w nazwie baru nie rozpycha kolumny poza panel */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
   align-items: end;
   width: 100%;
@@ -447,12 +448,14 @@
 }
 
 .beer-stack-label {
+  /* Bez limitu etykieta ma szerokość tekstu i break-word nie ma gdzie złamać długiego słowa */
+  max-width: 100%;
   margin: 0 0 0.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.1rem;
-  padding: 0.2rem 0.55rem;
+  padding: 0.2rem;
   text-align: center;
   border-radius: 12px 10px 14px 8px / 10px 14px 8px 12px;
   transition: background 150ms var(--ease-sketch);
@@ -464,8 +467,10 @@
 
 .beer-stack-name {
   font-family: var(--font-hand);
-  font-size: 1.8rem;
+  font-size: 1.2rem;
   line-height: 1.1;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 .beer-stack-meta {
@@ -702,7 +707,7 @@
   }
 
   .beer-stack-name {
-    font-size: 1.3rem;
+    font-size: 1.1rem;
   }
 
   .beer-stack-meta {
