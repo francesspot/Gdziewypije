@@ -81,7 +81,9 @@ function createBarMarkerIcon(mode, bar) {
     iconWidth = rawLabel === 'brak danych' ? BAR_MARKER_ICON_WIDTH_NO_DATA : BAR_MARKER_ICON_WIDTH_PRICE
   }
 
-  const html = `<div class="bar-marker-pill">${leadingSvg}<span class="bar-marker-value">${labelText}</span></div>`
+  // alt działa w Leaflet tylko dla ikon <img>, więc nazwę dla czytnika ekranu niesie ukryty tekst.
+  const nameText = `<span class="sr-only">${escapeHtml(bar.name)}: </span>`
+  const html = `<div class="bar-marker-pill">${nameText}${leadingSvg}<span class="bar-marker-value">${labelText}</span></div>`
   return L.divIcon({
     className: 'bar-marker',
     html,
@@ -180,8 +182,8 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
 
     for (const bar of bars) {
       const point = [bar.latitude, bar.longitude]
-      // title daje podpowiedź po najechaniu, alt nazwę dla czytnika ekranu.
-      L.marker(point, { icon: createBarMarkerIcon(mode, bar), title: bar.name, alt: bar.name }).addTo(layer)
+      // title daje podpowiedź po najechaniu.
+      L.marker(point, { icon: createBarMarkerIcon(mode, bar), title: bar.name }).addTo(layer)
       boundsPoints.push(point)
     }
 
