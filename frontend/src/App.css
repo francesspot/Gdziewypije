@@ -577,6 +577,14 @@
   gap: 0.55rem;
 }
 
+.bar-rank {
+  min-width: 1.8rem;
+  flex-shrink: 0;
+  text-align: right;
+  font-family: var(--font-hand);
+  font-size: 1.3rem;
+}
+
 .favorite-star {
   width: 2rem;
   height: 2rem;

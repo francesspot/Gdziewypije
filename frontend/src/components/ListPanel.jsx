@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { getBars } from '../api'
+import { getRanking } from '../api'
 import CloseArrow from './CloseArrow'
 
 function formatRating(avgRating) {
@@ -17,7 +17,8 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
   useEffect(() => {
     let cancelled = false
 
-    getBars()
+    // Kolejność i miejsca pochodzą z rankingu w backendzie (Q2), więc lista nie jest sortowana ponownie
+    getRanking()
       .then((data) => {
         if (!cancelled) {
           setBars(data)
@@ -104,6 +105,7 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
           const isFavorite = favoriteIds.includes(bar.id)
           return (
             <li key={bar.id}>
+              <span className="bar-rank">{bar.rank}.</span>
               <button
                 className={isFavorite ? 'favorite-star is-on' : 'favorite-star'}
                 type="button"
