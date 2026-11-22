@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import LoginForm from './LoginForm'
+import RegisterForm from './RegisterForm'
 
 function AccountPanel({ open, user, onClose, onLoggedIn }) {
   const [mode, setMode] = useState('login')
@@ -67,7 +68,11 @@ function AccountPanel({ open, user, onClose, onLoggedIn }) {
                 Rejestracja
               </button>
             </div>
-            {mode === 'login' ? <LoginForm onLoggedIn={onLoggedIn} /> : null}
+            {mode === 'login' ? (
+              <LoginForm onLoggedIn={onLoggedIn} />
+            ) : (
+              <RegisterForm onLoggedIn={onLoggedIn} />
+            )}
           </>
         )}
       </section>
