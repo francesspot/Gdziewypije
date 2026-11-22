@@ -10,20 +10,34 @@ Aplikacja FastAPI (Python). Kod w `src/`, testy w `tests/`, konfiguracja w `.env
 ## Wymagania
 
 - Python 3.11 lub nowszy
-- Docker Desktop (baza PostgreSQL + PostGIS z `docker-compose.yml` w katalogu głównym)
+- Docker Desktop (Windows, macOS) albo Docker Engine z Docker Compose (Linux) – baza PostgreSQL + PostGIS z `docker-compose.yml` w katalogu głównym
 - Dostęp do internetu przy imporcie barów
 
 ## Uruchomienie od zera
 
-Komendy dla Windows (`cmd`). Na Linuksie i macOS: `cp` zamiast `copy` oraz `source .venv/bin/activate`.
+Komendy różniące się między systemami są podane osobno dla Windows (`cmd`) i dla Linuksa (te same działają na macOS). Pozostałe są wspólne.
 
 ### 1. Baza danych
 
 W katalogu głównym repozytorium:
 
+Windows:
+
 ```
 copy .env.example .env
 docker compose up -d
+```
+
+Linux:
+
+```bash
+cp .env.example .env
+docker compose up -d
+```
+
+Skrypty bazy (wspólne):
+
+```
 docker compose exec db psql -U gdziewypije -d gdziewypije -v ON_ERROR_STOP=1 -f /db/01_schema.sql
 docker compose exec db psql -U gdziewypije -d gdziewypije -v ON_ERROR_STOP=1 -f /db/02_seed.sql
 docker compose exec db psql -U gdziewypije -d gdziewypije -v ON_ERROR_STOP=1 -f /db/03_testdata.sql
@@ -35,12 +49,25 @@ Ostatnia komenda (dane testowe) jest opcjonalna. Jeśli `psql` zaraz po `up -d` 
 
 W katalogu `backend/`:
 
+Windows:
+
 ```
 python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements-dev.txt
 copy .env.example .env
 ```
+
+Linux:
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements-dev.txt
+cp .env.example .env
+```
+
+Kolejne komendy zakładają aktywne środowisko `.venv`, w którym `python` działa na obu systemach.
 
 W `backend/.env` trzeba ustawić:
 
@@ -107,7 +134,7 @@ Zalogowany użytkownik wysyła nagłówek `Authorization: Bearer <token>`. Błę
 
 Najprościej w Swaggerze (`/docs`): **Try it out** przy ścieżce, a token z rejestracji lub logowania wpisuje się przyciskiem **Authorize**.
 
-Z wiersza poleceń przez `curl`, w Git Bash (w PowerShell `curl` to inna komenda). Przykłady zakładają dane testowe, więc bar o id 1 istnieje:
+Z wiersza poleceń przez `curl`: na Windows w Git Bash (w PowerShell `curl` to inna komenda), na Linuksie w zwykłym terminalu. Przykłady zakładają dane testowe, więc bar o id 1 istnieje:
 
 ```bash
 # Rejestracja; odpowiedź zawiera access_token
