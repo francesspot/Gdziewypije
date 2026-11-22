@@ -51,9 +51,17 @@ def attach_prices(conn: psycopg.Connection, bars: list[dict]) -> list[dict]:
     return bars
 
 
-@router.get("/bars", response_model=list[BarResponse])
+@router.get(
+    "/bars",
+    response_model=list[BarResponse],
+    summary="Lista barów",
+    description=(
+        "Zwraca aktywne bary z oceną i aktualnymi cenami, posortowane po nazwie (WF.01). "
+        "Parametr `q` filtruje po fragmencie nazwy bez względu na wielkość liter (WF.06)."
+    ),
+)
 def list_bars(
-    q: NoNulStr | None = Query(default=None),
+    q: NoNulStr | None = Query(default=None, description="Fragment nazwy baru"),
     conn: psycopg.Connection = Depends(get_connection),
 ) -> list[dict]:
     query = q.strip() if q else ""
@@ -80,12 +88,20 @@ def list_bars(
     return attach_prices(conn, rows)
 
 
-@router.get("/nearby", response_model=list[NearbyBarResponse])
+@router.get(
+    "/nearby",
+    response_model=list[NearbyBarResponse],
+    summary="Bary w pobliżu",
+    description=(
+        "Zwraca aktywne bary w promieniu `radius_m` metrów od punktu, "
+        "od najbliższego, z odległością w `distance_m` (Q1, WF.17)."
+    ),
+)
 def nearby_bars(
-    lat: Annotated[float, Query(ge=-90, le=90)],
-    lon: Annotated[float, Query(ge=-180, le=180)],
+    lat: Annotated[float, Query(ge=-90, le=90, description="Szerokość geograficzna")],
+    lon: Annotated[float, Query(ge=-180, le=180, description="Długość geograficzna")],
     # Najwyżej 10 km: z centrum obejmuje cały Wrocław, a odrzuca inf i absurdalnie duże wartości
-    radius_m: Annotated[float, Query(gt=0, le=10_000)],
+    radius_m: Annotated[float, Query(gt=0, le=10_000, description="Promień w metrach, najwyżej 10 000")],
     conn: psycopg.Connection = Depends(get_connection),
 ) -> list[dict]:
     # Q1: ST_DWithin i ST_Distance w metrach; ST_MakePoint przyjmuje długość, potem szerokość
@@ -104,7 +120,12 @@ def nearby_bars(
     return attach_prices(conn, rows)
 
 
-@router.get("/bars/{bar_id}", response_model=BarResponse)
+@router.get(
+    "/bars/{bar_id}",
+    response_model=BarResponse,
+    summary="Szczegóły baru",
+    description="Zwraca bar z oceną i aktualnymi cenami (WF.02). Brak baru lub bar wyłączony daje 404.",
+)
 def get_bar(bar_id: int, conn: psycopg.Connection = Depends(get_connection)) -> dict:
     row = conn.execute(
         f"""
@@ -120,7 +141,15 @@ def get_bar(bar_id: int, conn: psycopg.Connection = Depends(get_connection)) -> 
     return attach_prices(conn, [row])[0]
 
 
-@router.get("/ranking", response_model=list[RankingBarResponse])
+@router.get(
+    "/ranking",
+    response_model=list[RankingBarResponse],
+    summary="Ranking barów",
+    description=(
+        "Zwraca bary z co najmniej jedną oceną, uszeregowane po ocenie ważonej `weighted_score` (Q2, WF.05). "
+        "Bary z tym samym wynikiem mają to samo miejsce `rank`."
+    ),
+)
 def ranking(conn: psycopg.Connection = Depends(get_connection)) -> list[dict]:
     # Q2 z raportu etapu 2: RANK po ocenie ważonej, tylko bary z co najmniej jedną oceną
     rows = conn.execute(

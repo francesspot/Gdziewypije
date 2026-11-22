@@ -7,7 +7,11 @@ from src.db.connection import connect
 router = APIRouter(tags=["health"])
 
 
-@router.get("/health")
+@router.get(
+    "/health",
+    summary="Stan backendu",
+    description='Zwraca `{"status": "ok"}`, gdy backend działa i łączy się z bazą. Brak bazy daje 503.',
+)
 def health() -> dict:
     # Połączenie otwierane ręcznie, a nie przez get_connection, żeby brak bazy dał czytelny błąd zamiast 500
     try:

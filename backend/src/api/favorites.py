@@ -10,7 +10,16 @@ from src.schemas.favorites import FavoriteResponse
 router = APIRouter(tags=["favorites"])
 
 
-@router.post("/bars/{bar_id}/favorite", status_code=201, response_model=FavoriteResponse)
+@router.post(
+    "/bars/{bar_id}/favorite",
+    status_code=201,
+    response_model=FavoriteResponse,
+    summary="Dodanie baru do ulubionych",
+    description=(
+        "Dodaje bar do ulubionych zalogowanego użytkownika (T5, WF.14). Wymaga logowania. "
+        "Brak baru daje 404, bar już w ulubionych daje 409."
+    ),
+)
 def add_favorite(
     bar_id: int,
     user: dict = Depends(get_current_user),
@@ -31,7 +40,12 @@ def add_favorite(
         raise HTTPException(status_code=409, detail="Bar jest już w ulubionych")
 
 
-@router.delete("/bars/{bar_id}/favorite", status_code=204)
+@router.delete(
+    "/bars/{bar_id}/favorite",
+    status_code=204,
+    summary="Usunięcie baru z ulubionych",
+    description="Usuwa bar z ulubionych (T5, WF.14). Wymaga logowania. Bar spoza ulubionych daje 404.",
+)
 def remove_favorite(
     bar_id: int,
     user: dict = Depends(get_current_user),
@@ -46,7 +60,12 @@ def remove_favorite(
         raise HTTPException(status_code=404, detail="Bar nie jest w ulubionych")
 
 
-@router.get("/favorites", response_model=list[FavoriteResponse])
+@router.get(
+    "/favorites",
+    response_model=list[FavoriteResponse],
+    summary="Lista ulubionych",
+    description="Zwraca ulubione bary zalogowanego użytkownika, od najstarszego dodania (WF.15). Wymaga logowania.",
+)
 def list_favorites(
     user: dict = Depends(get_current_user),
     conn: psycopg.Connection = Depends(get_connection),
