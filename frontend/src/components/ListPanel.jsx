@@ -46,6 +46,7 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
   const matchesQuery = (bar) => bar.name.toLowerCase().includes(normalized)
   const visibleRanked = rankedBars.filter(matchesQuery)
   const visibleUnrated = unratedBars.filter(matchesQuery)
+  const isEmpty = !loading && !error && visibleRanked.length === 0 && visibleUnrated.length === 0
 
   useEffect(() => {
     let cancelled = false
@@ -136,17 +137,25 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
           {error}
         </p>
       ) : null}
+      {isEmpty ? (
+        <p className="list-status" role="status">
+          {normalized ? 'Brak barów o takiej nazwie' : 'Brak barów'}
+        </p>
+      ) : null}
       <div className="bar-list">
-        <ul className="bar-list-section">
-          {visibleRanked.map((bar) => (
-            <BarListItem
-              key={bar.id}
-              bar={bar}
-              isFavorite={favoriteIds.includes(bar.id)}
-              onToggleFavorite={onToggleFavorite}
-            />
-          ))}
-        </ul>
+        {/* Filtr zachowuje kolejność i miejsca z rankingu, bo nie zmienia kolejności elementów */}
+        {visibleRanked.length > 0 ? (
+          <ul className="bar-list-section">
+            {visibleRanked.map((bar) => (
+              <BarListItem
+                key={bar.id}
+                bar={bar}
+                isFavorite={favoriteIds.includes(bar.id)}
+                onToggleFavorite={onToggleFavorite}
+              />
+            ))}
+          </ul>
+        ) : null}
         {visibleUnrated.length > 0 ? (
           <>
             <h2 className="bar-list-heading">Bez ocen</h2>
