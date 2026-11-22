@@ -1,33 +1,69 @@
 import { useEffect, useState } from 'react'
-import { getRanking } from '../api'
+import { getBars, getRanking } from '../api'
 import CloseArrow from './CloseArrow'
 
 function formatRating(avgRating) {
   return avgRating == null ? '–' : avgRating.toFixed(1)
 }
 
+function BarListItem({ bar, isFavorite, onToggleFavorite }) {
+  return (
+    <li>
+      {/* Pusta komórka bez miejsca wyrównuje nazwy w obu sekcjach */}
+      <span className="bar-rank">{bar.rank == null ? '' : `${bar.rank}.`}</span>
+      <button
+        className={isFavorite ? 'favorite-star is-on' : 'favorite-star'}
+        type="button"
+        aria-pressed={isFavorite}
+        aria-label={
+          isFavorite ? `Usuń ${bar.name} z ulubionych` : `Dodaj ${bar.name} do ulubionych`
+        }
+        onClick={() => onToggleFavorite(bar.id)}
+      >
+        <svg viewBox="0 0 24 24" aria-hidden="true">
+          <path
+            d="M12 3.2 14.6 8.8 20.8 9.4 16.2 13.6 17.6 19.8 12 16.8 6.4 19.8 7.8 13.6 3.2 9.4 9.4 8.8 Z"
+            stroke="var(--ink-oak)"
+            strokeWidth="2.5"
+            strokeLinejoin="round"
+            strokeLinecap="round"
+          />
+        </svg>
+      </button>
+      <span className="bar-name">{bar.name}</span>
+      <span className="rating">{formatRating(bar.avg_rating)}</span>
+    </li>
+  )
+}
+
 function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop }) {
   const [query, setQuery] = useState('')
-  const [bars, setBars] = useState([])
+  const [rankedBars, setRankedBars] = useState([])
+  const [unratedBars, setUnratedBars] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const normalized = query.trim().toLowerCase()
-  const visibleBars = bars.filter((bar) => bar.name.toLowerCase().includes(normalized))
+  const matchesQuery = (bar) => bar.name.toLowerCase().includes(normalized)
+  const visibleRanked = rankedBars.filter(matchesQuery)
+  const visibleUnrated = unratedBars.filter(matchesQuery)
 
   useEffect(() => {
     let cancelled = false
 
-    // Kolejność i miejsca pochodzą z rankingu w backendzie (Q2), więc lista nie jest sortowana ponownie
-    getRanking()
-      .then((data) => {
+    // Kolejność i miejsca pochodzą z rankingu w backendzie (Q2), więc lista nie jest sortowana ponownie.
+    // Ranking pomija bary bez ocen, więc trafiają do osobnej sekcji z /bars (już posortowane po nazwie).
+    Promise.all([getRanking(), getBars()])
+      .then(([ranking, allBars]) => {
         if (!cancelled) {
-          setBars(data)
+          setRankedBars(ranking)
+          setUnratedBars(allBars.filter((bar) => bar.ratings_count === 0))
           setError('')
         }
       })
       .catch((err) => {
         if (!cancelled) {
-          setBars([])
+          setRankedBars([])
+          setUnratedBars([])
           setError(err.message)
         }
       })
@@ -100,37 +136,33 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
           {error}
         </p>
       ) : null}
-      <ul className="bar-list">
-        {visibleBars.map((bar) => {
-          const isFavorite = favoriteIds.includes(bar.id)
-          return (
-            <li key={bar.id}>
-              <span className="bar-rank">{bar.rank}.</span>
-              <button
-                className={isFavorite ? 'favorite-star is-on' : 'favorite-star'}
-                type="button"
-                aria-pressed={isFavorite}
-                aria-label={
-                  isFavorite ? `Usuń ${bar.name} z ulubionych` : `Dodaj ${bar.name} do ulubionych`
-                }
-                onClick={() => onToggleFavorite(bar.id)}
-              >
-                <svg viewBox="0 0 24 24" aria-hidden="true">
-                  <path
-                    d="M12 3.2 14.6 8.8 20.8 9.4 16.2 13.6 17.6 19.8 12 16.8 6.4 19.8 7.8 13.6 3.2 9.4 9.4 8.8 Z"
-                    stroke="var(--ink-oak)"
-                    strokeWidth="2.5"
-                    strokeLinejoin="round"
-                    strokeLinecap="round"
-                  />
-                </svg>
-              </button>
-              <span className="bar-name">{bar.name}</span>
-              <span className="rating">{formatRating(bar.avg_rating)}</span>
-            </li>
-          )
-        })}
-      </ul>
+      <div className="bar-list">
+        <ul className="bar-list-section">
+          {visibleRanked.map((bar) => (
+            <BarListItem
+              key={bar.id}
+              bar={bar}
+              isFavorite={favoriteIds.includes(bar.id)}
+              onToggleFavorite={onToggleFavorite}
+            />
+          ))}
+        </ul>
+        {visibleUnrated.length > 0 ? (
+          <>
+            <h2 className="bar-list-heading">Bez ocen</h2>
+            <ul className="bar-list-section">
+              {visibleUnrated.map((bar) => (
+                <BarListItem
+                  key={bar.id}
+                  bar={bar}
+                  isFavorite={favoriteIds.includes(bar.id)}
+                  onToggleFavorite={onToggleFavorite}
+                />
+              ))}
+            </ul>
+          </>
+        ) : null}
+      </div>
     </aside>
   )
 }
