@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
+import LoginForm from './LoginForm'
 
-function AccountPanel({ open, user, onClose }) {
+function AccountPanel({ open, user, onClose, onLoggedIn }) {
   const [mode, setMode] = useState('login')
 
   useEffect(() => {
@@ -47,24 +48,27 @@ function AccountPanel({ open, user, onClose }) {
             Zalogowano jako <strong>{user.display_name}</strong> ({user.email})
           </p>
         ) : (
-          <div className="account-tabs" role="group" aria-label="Logowanie lub rejestracja">
-            <button
-              className="account-tab"
-              type="button"
-              aria-pressed={mode === 'login'}
-              onClick={() => setMode('login')}
-            >
-              Logowanie
-            </button>
-            <button
-              className="account-tab"
-              type="button"
-              aria-pressed={mode === 'register'}
-              onClick={() => setMode('register')}
-            >
-              Rejestracja
-            </button>
-          </div>
+          <>
+            <div className="account-tabs" role="group" aria-label="Logowanie lub rejestracja">
+              <button
+                className="account-tab"
+                type="button"
+                aria-pressed={mode === 'login'}
+                onClick={() => setMode('login')}
+              >
+                Logowanie
+              </button>
+              <button
+                className="account-tab"
+                type="button"
+                aria-pressed={mode === 'register'}
+                onClick={() => setMode('register')}
+              >
+                Rejestracja
+              </button>
+            </div>
+            {mode === 'login' ? <LoginForm onLoggedIn={onLoggedIn} /> : null}
+          </>
         )}
       </section>
     </div>

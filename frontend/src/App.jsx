@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { getSession } from './api'
+import { getSession, setSession } from './api'
 import AccountPanel from './components/AccountPanel'
 import ListPanel from './components/ListPanel'
 import MapScreen from './components/MapScreen'
@@ -12,7 +12,13 @@ function App() {
   const [favoriteIds, setFavoriteIds] = useState([])
   const [accountOpen, setAccountOpen] = useState(false)
   // Sesja z localStorage, żeby po odświeżeniu strony użytkownik był dalej zalogowany
-  const [user] = useState(() => getSession()?.user ?? null)
+  const [user, setUser] = useState(() => getSession()?.user ?? null)
+
+  function handleLoggedIn(session) {
+    setSession(session)
+    setUser(session.user)
+    setAccountOpen(false)
+  }
 
   function toggleFavorite(barId) {
     setFavoriteIds((current) =>
@@ -70,7 +76,12 @@ function App() {
           setTopOpen(true)
         }}
       />
-      <AccountPanel open={accountOpen} user={user} onClose={() => setAccountOpen(false)} />
+      <AccountPanel
+        open={accountOpen}
+        user={user}
+        onClose={() => setAccountOpen(false)}
+        onLoggedIn={handleLoggedIn}
+      />
     </div>
   )
 }
