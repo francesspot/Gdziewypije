@@ -10,6 +10,7 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
   const [query, setQuery] = useState('')
   const [bars, setBars] = useState([])
   const [error, setError] = useState('')
+  const [loading, setLoading] = useState(true)
   const normalized = query.trim().toLowerCase()
   const visibleBars = bars.filter((bar) => bar.name.toLowerCase().includes(normalized))
 
@@ -27,6 +28,11 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
         if (!cancelled) {
           setBars([])
           setError(err.message)
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false)
         }
       })
 
@@ -83,6 +89,11 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
           />
         </svg>
       </label>
+      {loading ? (
+        <p className="list-status" role="status">
+          Ładowanie…
+        </p>
+      ) : null}
       {error ? (
         <p className="list-error" role="alert">
           {error}

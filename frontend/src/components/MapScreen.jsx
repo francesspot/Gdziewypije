@@ -41,21 +41,19 @@ function formatMarkerRating(avgRating) {
   return avgRating == null ? '–' : avgRating.toFixed(1)
 }
 
-function cheapestPriceAmount(prices) {
-  if (!prices || prices.length === 0) {
-    return null
-  }
-  let min = prices[0].amount
-  for (let i = 1; i < prices.length; i += 1) {
-    if (prices[i].amount < min) {
-      min = prices[i].amount
-    }
-  }
-  return min
+// Ten sam napój we wszystkich barach, żeby ceny na mapie dało się porównać (WB.02).
+const MAP_DRINK_NAME = 'Piwo lane'
+const MAP_DRINK_VOLUME_ML = 500
+
+function mapDrinkPriceAmount(prices) {
+  // v_current_prices zwraca najwyżej jedną aktualną cenę na parę bar–napój.
+  const price = (prices ?? []).find(
+    (p) => p.drink_name === MAP_DRINK_NAME && p.volume_ml === MAP_DRINK_VOLUME_ML,
+  )
+  return price ? price.amount : null
 }
 
-function formatMarkerPriceLabel(prices) {
-  const amount = cheapestPriceAmount(prices)
+function formatMarkerPrice(amount) {
   if (amount == null) {
     return 'brak danych'
   }
@@ -76,12 +74,14 @@ function createBarMarkerIcon(mode, bar) {
     iconWidth = BAR_MARKER_ICON_WIDTH_RATING
   } else {
     leadingSvg = BAR_MARKER_DOLLAR_SVG
-    const rawLabel = formatMarkerPriceLabel(bar.prices)
-    labelText = escapeHtml(rawLabel)
-    iconWidth = rawLabel === 'brak danych' ? BAR_MARKER_ICON_WIDTH_NO_DATA : BAR_MARKER_ICON_WIDTH_PRICE
+    const amount = mapDrinkPriceAmount(bar.prices)
+    labelText = escapeHtml(formatMarkerPrice(amount))
+    iconWidth = amount == null ? BAR_MARKER_ICON_WIDTH_NO_DATA : BAR_MARKER_ICON_WIDTH_PRICE
   }
 
-  const html = `<div class="bar-marker-pill">${leadingSvg}<span class="bar-marker-value">${labelText}</span></div>`
+  // alt działa w Leaflet tylko dla ikon <img>, więc nazwę dla czytnika ekranu niesie ukryty tekst.
+  const nameText = `<span class="sr-only">${escapeHtml(bar.name)}: </span>`
+  const html = `<div class="bar-marker-pill">${nameText}${leadingSvg}<span class="bar-marker-value">${labelText}</span></div>`
   return L.divIcon({
     className: 'bar-marker',
     html,
@@ -91,19 +91,16 @@ function createBarMarkerIcon(mode, bar) {
   })
 }
 
-function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
+function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
   const markersLayerRef = useRef(null)
-  const barsRef = useRef([])
+  const userMovedMapRef = useRef(false)
   const fitBoundsDoneRef = useRef(false)
   const [mapReady, setMapReady] = useState(false)
   const [bars, setBars] = useState([])
   const [mode, setMode] = useState('rating')
   const [fetchError, setFetchError] = useState('')
-
-  // Parametr zostaje dla późniejszych ulubionych; odwołanie gasi ostrzeżenie o nieużyciu.
-  void favoriteIds
 
   useEffect(() => {
     if (!mapContainerRef.current) {
@@ -122,6 +119,14 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
         '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors',
     }).addTo(map)
 
+    // Prawy dolny róg zajmują kontrolki i panel listy, a źródło danych ma być widoczne (WNF.09).
+    map.attributionControl.setPosition('bottomleft')
+
+    // Przesunięcie albo zoom przed odpowiedzią API blokuje późniejsze fitBounds.
+    map.on('dragstart zoomstart', () => {
+      userMovedMapRef.current = true
+    })
+
     mapRef.current = map
     setMapReady(true)
 
@@ -137,11 +142,11 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
 
     getBars()
       .then((fetchedBars) => {
+        // Odpowiedź po odmontowaniu (np. StrictMode) nie aktualizuje stanu.
         if (cancelled) {
           return
         }
         setFetchError('')
-        barsRef.current = fetchedBars
         setBars(fetchedBars)
       })
       .catch((err) => {
@@ -164,11 +169,7 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
       return
     }
 
-    const previousLayer = markersLayerRef.current
-    if (previousLayer) {
-      map.removeLayer(previousLayer)
-    }
-
+    // Poprzednią warstwę usuwa cleanup tego efektu przed kolejnym uruchomieniem.
     const layer = L.layerGroup()
     const boundsPoints = []
 
@@ -177,16 +178,19 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
       if (latitude == null || longitude == null) {
         continue
       }
-      L.marker([latitude, longitude], { icon: createBarMarkerIcon(mode, bar) }).addTo(layer)
-      boundsPoints.push([latitude, longitude])
+      const point = [bar.latitude, bar.longitude]
+      // title daje podpowiedź po najechaniu.
+      L.marker(point, { icon: createBarMarkerIcon(mode, bar), title: bar.name }).addTo(layer)
+      boundsPoints.push(point)
     }
 
     layer.addTo(map)
     markersLayerRef.current = layer
 
     // Tylko przy pierwszym zestawie punktów — zmiana trybu nie przesuwa widoku.
-    if (!fitBoundsDoneRef.current && boundsPoints.length > 0) {
-      map.fitBounds(boundsPoints, { padding: [40, 40] })
+    if (!fitBoundsDoneRef.current && boundsPoints.length > 0 && !userMovedMapRef.current) {
+      // maxZoom ogranicza przybliżenie, gdy jest tylko jeden bar.
+      map.fitBounds(boundsPoints, { padding: [40, 40], maxZoom: 16 })
       fitBoundsDoneRef.current = true
     }
 
@@ -238,7 +242,8 @@ function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
             type="button"
             className="map-mode-toggle-btn"
             aria-pressed={mode === 'price'}
-            aria-label="Pokaż ceny"
+            aria-label="Pokaż ceny piwa lanego 500 ml"
+            title="Ceny piwa lanego 500 ml"
             onClick={() => setMode('price')}
           >
             <svg className="map-mode-toggle-dollar" viewBox="0 0 24 24" aria-hidden="true">

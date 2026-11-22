@@ -6,6 +6,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 
 from src.db.connection import get_connection
 from src.schemas.bars import BarResponse, NearbyBarResponse, RankingBarResponse
+from src.schemas.text import NoNulStr
 
 router = APIRouter(tags=["bars"])
 
@@ -52,7 +53,7 @@ def attach_prices(conn: psycopg.Connection, bars: list[dict]) -> list[dict]:
 
 @router.get("/bars", response_model=list[BarResponse])
 def list_bars(
-    q: str | None = Query(default=None),
+    q: NoNulStr | None = Query(default=None),
     conn: psycopg.Connection = Depends(get_connection),
 ) -> list[dict]:
     query = q.strip() if q else ""
@@ -83,7 +84,8 @@ def list_bars(
 def nearby_bars(
     lat: Annotated[float, Query(ge=-90, le=90)],
     lon: Annotated[float, Query(ge=-180, le=180)],
-    radius_m: Annotated[float, Query(gt=0)],
+    # Najwyżej 10 km: z centrum obejmuje cały Wrocław, a odrzuca inf i absurdalnie duże wartości
+    radius_m: Annotated[float, Query(gt=0, le=10_000)],
     conn: psycopg.Connection = Depends(get_connection),
 ) -> list[dict]:
     # Q1: ST_DWithin i ST_Distance w metrach; ST_MakePoint przyjmuje długość, potem szerokość

@@ -161,6 +161,13 @@ def test_list_bars_blank_query_returns_all_active_bars(client, tag, q):
     assert f"{tag} Beta" in names
 
 
+def test_list_bars_query_with_nul_returns_422(client):
+    response = client.get("/bars", params={"q": "piwn\x00"})
+
+    assert response.status_code == 422
+    assert [error["loc"] for error in response.json()["detail"]] == [["query", "q"]]
+
+
 def test_list_bars_treats_percent_and_underscore_as_literal(client, tag):
     underscore = insert_bar(f"{tag} A_B")
     insert_bar(f"{tag} AXB")

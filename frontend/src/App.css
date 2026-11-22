@@ -205,7 +205,6 @@
 .map-mode-toggle-btn[aria-pressed='true'] .map-mode-toggle-dollar {
   color: #1f8a4c;
 }
-
 .map-controls {
   position: absolute;
   right: var(--panel-gap);
@@ -218,6 +217,11 @@
 
 .app-list-open .map-controls {
   right: calc(var(--panel-width) + var(--panel-gap) + 24px);
+}
+
+/* Otwarty panel TOP zasłoniłby atrybucję OpenStreetMap (WNF.09). */
+.app-top-open .leaflet-bottom.leaflet-left {
+  left: calc(var(--panel-width) + var(--panel-gap) * 2);
 }
 
 .map-controls button {
@@ -243,37 +247,52 @@
   box-shadow: 3px 3px 0px var(--ink-oak);
 }
 
-.map-controls .map-mode-toggle .map-mode-toggle-btn {
+/* Prefiks .map-controls przebija ogólny styl .map-controls button; obramowanie i cień ma cała pigułka. */
+.map-controls .map-mode-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
   width: 2.55rem;
-  height: 2.4rem;
   border: none;
   border-radius: 0;
   box-shadow: none;
-  filter: none;
-  font-size: 1rem;
   transition:
     background 120ms var(--ease-sketch),
     color 120ms var(--ease-sketch);
 }
 
-.map-controls .map-mode-toggle .map-mode-toggle-btn + .map-mode-toggle-btn {
+.map-controls .map-mode-toggle-btn + .map-mode-toggle-btn {
   border-left: 2px solid var(--ink-oak);
 }
 
-.map-controls .map-mode-toggle .map-mode-toggle-btn[aria-pressed='true'] {
+.map-controls .map-mode-toggle-btn[aria-pressed='true'] {
   background: var(--bg-foam);
   color: var(--ink-oak);
 }
 
-.map-controls .map-mode-toggle .map-mode-toggle-btn:hover {
+.map-controls .map-mode-toggle-btn:hover {
   transform: none;
   box-shadow: none;
 }
 
-.map-controls .map-mode-toggle .map-mode-toggle-btn[aria-pressed='true']:hover {
+.map-controls .map-mode-toggle-btn[aria-pressed='true']:hover {
   transform: translate(-1px, -1px);
 }
 
+.map-mode-toggle-star,
+.map-mode-toggle-dollar {
+  width: 1.1rem;
+  height: 1.1rem;
+  display: block;
+}
+
+.map-mode-toggle-btn[aria-pressed='true'] .map-mode-toggle-star {
+  color: #d4a017;
+}
+
+.map-mode-toggle-btn[aria-pressed='true'] .map-mode-toggle-dollar {
+  color: #1f8a4c;
+}
 .map-controls .map-locate svg {
   width: 1.15rem;
   height: 1.15rem;
@@ -586,9 +605,13 @@
   pointer-events: none;
 }
 
+.list-status,
 .list-error {
   flex-shrink: 0;
   margin: 0 0 1rem;
+}
+
+.list-error {
   color: var(--accent-brick);
 }
 

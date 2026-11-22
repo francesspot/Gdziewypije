@@ -118,6 +118,8 @@ def test_nearby_returns_bars_inside_radius_sorted_by_distance(client, tag):
         ({**ORIGIN, "lon": -181}, "lon"),
         ({**ORIGIN, "radius_m": 0}, "radius_m"),
         ({**ORIGIN, "radius_m": -10}, "radius_m"),
+        ({**ORIGIN, "radius_m": 10_001}, "radius_m"),
+        ({**ORIGIN, "radius_m": "inf"}, "radius_m"),
         ({"lat": 51.110, "lon": 17.032}, "radius_m"),
         ({"lon": 17.032, "radius_m": 2000}, "lat"),
         ({"lat": 51.110, "radius_m": 2000}, "lon"),

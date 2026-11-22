@@ -21,16 +21,26 @@ export function clearSession() {
   localStorage.removeItem(SESSION_KEY)
 }
 
+function formatValidationItem(item) {
+  if (typeof item === 'string') {
+    return item
+  }
+  if (!item?.msg) {
+    return null
+  }
+  // loc z FastAPI to np. ['body', 'email']; ostatni element to nazwa pola, samo ['body'] jej nie ma
+  const field = item.loc?.length > 1 ? item.loc.at(-1) : null
+  return field ? `${field}: ${item.msg}` : item.msg
+}
+
 function formatDetail(detail) {
   if (typeof detail === 'string' && detail) {
     return detail
   }
   if (Array.isArray(detail)) {
-    const messages = detail
-      .map((item) => (typeof item === 'string' ? item : item?.msg))
-      .filter(Boolean)
+    const messages = detail.map(formatValidationItem).filter(Boolean)
     if (messages.length > 0) {
-      return messages.join(' ')
+      return messages.join('; ')
     }
   }
   return null
