@@ -97,6 +97,11 @@
   right: calc(var(--panel-width) + var(--panel-gap) + 24px);
 }
 
+/* Otwarty panel TOP zasłoniłby atrybucję OpenStreetMap (WNF.09). */
+.app-top-open .leaflet-bottom.leaflet-left {
+  left: calc(var(--panel-width) + var(--panel-gap) * 2);
+}
+
 .map-controls button {
   width: 2.4rem;
   height: 2.4rem;
