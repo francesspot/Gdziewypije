@@ -9,7 +9,7 @@ const WOBBLE = [
 ]
 
 function formatAvgRating(avgRating) {
-  return avgRating == null ? '\u2013' : avgRating.toFixed(1)
+  return avgRating == null ? '–' : avgRating.toFixed(1)
 }
 
 function BeerStackColumn({ bar, mugCount }) {
