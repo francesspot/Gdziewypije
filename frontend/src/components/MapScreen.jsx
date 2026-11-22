@@ -5,6 +5,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { getBars } from '../api'
+import BarPopup from './BarPopup'
 
 const WROCLAW_CENTER = [51.11, 17.04]
 const INITIAL_ZOOM = 13
@@ -101,6 +102,7 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
   const [bars, setBars] = useState([])
   const [mode, setMode] = useState('rating')
   const [fetchError, setFetchError] = useState('')
+  const [selectedBarId, setSelectedBarId] = useState(null)
 
   useEffect(() => {
     if (!mapContainerRef.current) {
@@ -176,7 +178,9 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
     for (const bar of bars) {
       const point = [bar.latitude, bar.longitude]
       // title daje podpowiedź po najechaniu.
-      L.marker(point, { icon: createBarMarkerIcon(mode, bar), title: bar.name }).addTo(layer)
+      L.marker(point, { icon: createBarMarkerIcon(mode, bar), title: bar.name })
+        .on('click', () => setSelectedBarId(bar.id))
+        .addTo(layer)
       boundsPoints.push(point)
     }
 
@@ -208,6 +212,13 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
         </p>
       ) : null}
       <div className="map-canvas" ref={mapContainerRef} />
+      {selectedBarId != null ? (
+        <BarPopup
+          key={selectedBarId}
+          barId={selectedBarId}
+          onClose={() => setSelectedBarId(null)}
+        />
+      ) : null}
       {!topOpen ? (
         <button className="edge-button edge-button-left" type="button" onClick={onOpenTop}>
           TOP

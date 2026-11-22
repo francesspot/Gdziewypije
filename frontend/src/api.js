@@ -95,3 +95,7 @@ export function getBars() {
 export function getTopMonth() {
   return request('/top-month')
 }
+
+export function getBar(barId) {
+  return request(`/bars/${barId}`)
+}

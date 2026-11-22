@@ -107,6 +107,80 @@
   filter: url(#sketch);
 }
 
+/* Nad mapą i kontrolkami, ale pod panelami TOP i Lista (z-index 10). */
+.bar-popup {
+  position: absolute;
+  left: 50%;
+  bottom: 1rem;
+  z-index: 5;
+  width: min(calc(100% - var(--panel-gap) * 2), 22rem);
+  padding: 0.8rem 1rem 1rem;
+  transform: translateX(-50%);
+  border: 2.5px solid var(--ink-oak);
+  border-radius: 22px 28px 20px 26px / 26px 20px 28px 22px;
+  background: var(--bg-foam);
+  box-shadow: 3px 3px 0 var(--ink-oak);
+  filter: url(#sketch);
+}
+
+.bar-popup-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.bar-popup-header h2 {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 1.6rem;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.bar-popup-close {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  padding: 0;
+  border: 2px solid var(--ink-oak);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  background: var(--bg-foam);
+  color: var(--ink-oak);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.bar-popup-close:hover {
+  background: var(--bg-coaster);
+}
+
+.bar-popup-status,
+.bar-popup-error {
+  margin: 0.6rem 0 0;
+}
+
+.bar-popup-error {
+  color: var(--accent-brick);
+}
+
+.bar-popup-rating {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0;
+}
+
+.bar-popup-rating-value {
+  font-family: var(--font-hand);
+  font-size: 1.55rem;
+}
+
+.bar-popup-rating-count {
+  font-size: 0.9rem;
+}
+
 .edge-button {
   position: absolute;
   /* Taki sam offset jak przyciski strzałek w nagłówkach paneli. */
