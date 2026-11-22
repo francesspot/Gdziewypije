@@ -41,17 +41,16 @@ function formatMarkerRating(avgRating) {
   return avgRating == null ? '–' : avgRating.toFixed(1)
 }
 
-function cheapestPriceAmount(prices) {
-  if (!prices || prices.length === 0) {
-    return null
-  }
-  let min = prices[0].amount
-  for (let i = 1; i < prices.length; i += 1) {
-    if (prices[i].amount < min) {
-      min = prices[i].amount
-    }
-  }
-  return min
+// Ten sam napój we wszystkich barach, żeby ceny na mapie dało się porównać (WB.02).
+const MAP_DRINK_NAME = 'Piwo lane'
+const MAP_DRINK_VOLUME_ML = 500
+
+function mapDrinkPriceAmount(prices) {
+  // v_current_prices zwraca najwyżej jedną aktualną cenę na parę bar–napój.
+  const price = (prices ?? []).find(
+    (p) => p.drink_name === MAP_DRINK_NAME && p.volume_ml === MAP_DRINK_VOLUME_ML,
+  )
+  return price ? price.amount : null
 }
 
 function formatMarkerPrice(amount) {
@@ -75,7 +74,7 @@ function createBarMarkerIcon(mode, bar) {
     iconWidth = BAR_MARKER_ICON_WIDTH_RATING
   } else {
     leadingSvg = BAR_MARKER_DOLLAR_SVG
-    const amount = cheapestPriceAmount(bar.prices)
+    const amount = mapDrinkPriceAmount(bar.prices)
     labelText = escapeHtml(formatMarkerPrice(amount))
     iconWidth = amount == null ? BAR_MARKER_ICON_WIDTH_NO_DATA : BAR_MARKER_ICON_WIDTH_PRICE
   }
@@ -239,7 +238,8 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
             type="button"
             className="map-mode-toggle-btn"
             aria-pressed={mode === 'price'}
-            aria-label="Pokaż ceny"
+            aria-label="Pokaż ceny piwa lanego 500 ml"
+            title="Ceny piwa lanego 500 ml"
             onClick={() => setMode('price')}
           >
             <svg className="map-mode-toggle-dollar" viewBox="0 0 24 24" aria-hidden="true">
