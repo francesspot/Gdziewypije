@@ -1,5 +1,5 @@
-import { useState } from 'react'
-import { getSession, setSession } from './api'
+import { useEffect, useState } from 'react'
+import { clearSession, getMe, getSession, setSession } from './api'
 import AccountPanel from './components/AccountPanel'
 import ListPanel from './components/ListPanel'
 import MapScreen from './components/MapScreen'
@@ -14,9 +14,48 @@ function App() {
   // Sesja z localStorage, żeby po odświeżeniu strony użytkownik był dalej zalogowany
   const [user, setUser] = useState(() => getSession()?.user ?? null)
 
+  useEffect(() => {
+    // Token mógł wygasnąć albo konto zostało wyłączone, więc zapisana sesja jest sprawdzana w backendzie
+    const session = getSession()
+    if (!session) {
+      return
+    }
+    let cancelled = false
+
+    getMe()
+      .then((me) => {
+        if (!cancelled) {
+          setSession({ ...session, user: me })
+          setUser(me)
+        }
+      })
+      .catch((err) => {
+        // Tylko 401 oznacza nieważny token; brak połączenia z serwerem nie wylogowuje.
+        // Porównanie tokenu chroni sesję, gdy użytkownik zalogował się ponownie przed odpowiedzią.
+        if (
+          !cancelled &&
+          err.status === 401 &&
+          getSession()?.access_token === session.access_token
+        ) {
+          clearSession()
+          setUser(null)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
   function handleLoggedIn(session) {
     setSession(session)
     setUser(session.user)
+    setAccountOpen(false)
+  }
+
+  function handleLogout() {
+    clearSession()
+    setUser(null)
     setAccountOpen(false)
   }
 
@@ -81,6 +120,7 @@ function App() {
         user={user}
         onClose={() => setAccountOpen(false)}
         onLoggedIn={handleLoggedIn}
+        onLogout={handleLogout}
       />
     </div>
   )

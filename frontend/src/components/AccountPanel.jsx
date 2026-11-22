@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import LoginForm from './LoginForm'
 import RegisterForm from './RegisterForm'
 
-function AccountPanel({ open, user, onClose, onLoggedIn }) {
+function AccountPanel({ open, user, onClose, onLoggedIn, onLogout }) {
   const [mode, setMode] = useState('login')
 
   useEffect(() => {
@@ -45,9 +45,14 @@ function AccountPanel({ open, user, onClose, onLoggedIn }) {
           </button>
         </header>
         {user ? (
-          <p className="account-user">
-            Zalogowano jako <strong>{user.display_name}</strong> ({user.email})
-          </p>
+          <>
+            <p className="account-user">
+              Zalogowano jako <strong>{user.display_name}</strong> ({user.email})
+            </p>
+            <button className="account-submit account-logout" type="button" onClick={onLogout}>
+              Wyloguj się
+            </button>
+          </>
         ) : (
           <>
             <div className="account-tabs" role="group" aria-label="Logowanie lub rejestracja">

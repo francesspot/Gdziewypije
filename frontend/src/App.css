@@ -802,6 +802,11 @@
   box-shadow: 2px 2px 0px var(--ink-oak);
 }
 
+.account-logout {
+  width: 100%;
+  background: var(--bg-foam);
+}
+
 .account-submit:disabled {
   opacity: 0.6;
   cursor: wait;
