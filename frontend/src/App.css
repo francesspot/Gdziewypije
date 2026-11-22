@@ -313,6 +313,13 @@
   margin-top: 0.35rem;
 }
 
+.top-empty {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  text-align: center;
+}
+
 .top-divider {
   width: calc(100% + 2.4rem);
   margin: 0.35rem -1.2rem 0;
@@ -410,7 +417,8 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* minmax(0, 1fr): długie słowo w nazwie baru nie rozpycha kolumny poza panel */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
   align-items: end;
   width: 100%;
@@ -440,12 +448,14 @@
 }
 
 .beer-stack-label {
+  /* Bez limitu etykieta ma szerokość tekstu i break-word nie ma gdzie złamać długiego słowa */
+  max-width: 100%;
   margin: 0 0 0.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.1rem;
-  padding: 0.2rem 0.55rem;
+  padding: 0.2rem;
   text-align: center;
   border-radius: 12px 10px 14px 8px / 10px 14px 8px 12px;
   transition: background 150ms var(--ease-sketch);
@@ -457,13 +467,16 @@
 
 .beer-stack-name {
   font-family: var(--font-hand);
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   line-height: 1.1;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 .beer-stack-meta {
   font-family: var(--font-hand);
-  font-size: 1.35rem;
+  font-size: 3.0rem;
+  font-weight: 700;
   line-height: 1;
 }
 
@@ -475,19 +488,19 @@
 }
 
 .beer-stack-mug {
-  width: 100%;
-  max-width: 88px;
-  margin-bottom: -3px;
+  width: min(100%, 11vh);
+  max-width: 100%;
+  margin-bottom: -6%;
   transform: translateX(var(--mug-x)) rotate(var(--mug-r));
 }
 
-.beer-stack-mug:last-child {
+/* column-reverse: pierwszy kufel jest na dole, więc zeruje się jego margines, nie ostatniego. */
+.beer-stack-mug:first-child {
   margin-bottom: 0;
 }
 
 .beer-mug-icon {
   width: 100%;
-  max-width: 88px;
   height: auto;
   display: block;
 }
@@ -659,6 +672,10 @@
 }
 
 @media (max-width: 1024px) {
+  .beer-stack-mug {
+    width: min(100%, 12vh, 28vw);
+  }
+
   .panel-switch-button {
     display: block;
   }
@@ -681,5 +698,20 @@
 
   .app-list-open .map-controls {
     right: var(--panel-gap);
+  }
+}
+
+@media (max-width: 640px) {
+  .beer-stack-mug {
+    width: min(100%, 9vh, 24vw);
+  }
+
+  .beer-stack-name {
+    font-size: 1.1rem;
+  }
+
+  .beer-stack-meta {
+    font-size: 1.8rem;
+    font-weight: 700;
   }
 }
