@@ -154,57 +154,6 @@
   overflow: hidden;
 }
 
-.map-mode-toggle-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2.55rem;
-  height: 2.4rem;
-  padding: 0;
-  border: none;
-  border-radius: 0;
-  background: var(--bg-cellar);
-  color: var(--bg-foam);
-  cursor: pointer;
-  box-shadow: none;
-  filter: none;
-  transition:
-    background 120ms var(--ease-sketch),
-    color 120ms var(--ease-sketch);
-}
-
-.map-mode-toggle-btn + .map-mode-toggle-btn {
-  border-left: 2px solid var(--ink-oak);
-}
-
-.map-mode-toggle-btn[aria-pressed='true'] {
-  background: var(--bg-foam);
-  color: var(--ink-oak);
-}
-
-.map-mode-toggle-btn:hover {
-  transform: none;
-  box-shadow: none;
-}
-
-.map-mode-toggle-btn[aria-pressed='true']:hover {
-  transform: translate(-1px, -1px);
-}
-
-.map-mode-toggle-star,
-.map-mode-toggle-dollar {
-  width: 1.1rem;
-  height: 1.1rem;
-  display: block;
-}
-
-.map-mode-toggle-btn[aria-pressed='true'] .map-mode-toggle-star {
-  color: #d4a017;
-}
-
-.map-mode-toggle-btn[aria-pressed='true'] .map-mode-toggle-dollar {
-  color: #1f8a4c;
-}
 .map-controls {
   position: absolute;
   right: var(--panel-gap);
@@ -293,6 +242,7 @@
 .map-mode-toggle-btn[aria-pressed='true'] .map-mode-toggle-dollar {
   color: #1f8a4c;
 }
+
 .map-controls .map-locate svg {
   width: 1.15rem;
   height: 1.15rem;

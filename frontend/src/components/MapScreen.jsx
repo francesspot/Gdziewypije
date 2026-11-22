@@ -174,10 +174,6 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
     const boundsPoints = []
 
     for (const bar of bars) {
-      const { latitude, longitude } = bar
-      if (latitude == null || longitude == null) {
-        continue
-      }
       const point = [bar.latitude, bar.longitude]
       // title daje podpowiedź po najechaniu.
       L.marker(point, { icon: createBarMarkerIcon(mode, bar), title: bar.name }).addTo(layer)
