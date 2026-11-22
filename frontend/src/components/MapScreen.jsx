@@ -17,15 +17,12 @@ L.Icon.Default.mergeOptions({
   shadowUrl: markerShadow,
 })
 
-function MapScreen({ topOpen, listOpen, favoriteIds, onOpenTop, onOpenList }) {
+function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
   const markersLayerRef = useRef(null)
   const userMovedMapRef = useRef(false)
   const [fetchError, setFetchError] = useState('')
-
-  // Parametr zostaje dla późniejszych ulubionych; odwołanie gasi ostrzeżenie o nieużyciu.
-  void favoriteIds
 
   useEffect(() => {
     if (!mapContainerRef.current) {
