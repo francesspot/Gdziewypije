@@ -1,4 +1,6 @@
 import { useState } from 'react'
+import { getSession } from './api'
+import AccountPanel from './components/AccountPanel'
 import ListPanel from './components/ListPanel'
 import MapScreen from './components/MapScreen'
 import TopPanel from './components/TopPanel'
@@ -8,6 +10,9 @@ function App() {
   const [topOpen, setTopOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
   const [favoriteIds, setFavoriteIds] = useState([])
+  const [accountOpen, setAccountOpen] = useState(false)
+  // Sesja z localStorage, żeby po odświeżeniu strony użytkownik był dalej zalogowany
+  const [user] = useState(() => getSession()?.user ?? null)
 
   function toggleFavorite(barId) {
     setFavoriteIds((current) =>
@@ -37,6 +42,16 @@ function App() {
         onOpenTop={() => setTopOpen(true)}
         onOpenList={() => setListOpen(true)}
       />
+      {!accountOpen ? (
+        <button
+          className="account-button"
+          type="button"
+          onClick={() => setAccountOpen(true)}
+          aria-label={user ? `Konto: ${user.display_name}` : 'Zaloguj się'}
+        >
+          {user ? user.display_name : 'Zaloguj'}
+        </button>
+      ) : null}
       <TopPanel
         open={topOpen}
         onClose={() => setTopOpen(false)}
@@ -55,6 +70,7 @@ function App() {
           setTopOpen(true)
         }}
       />
+      <AccountPanel open={accountOpen} user={user} onClose={() => setAccountOpen(false)} />
     </div>
   )
 }

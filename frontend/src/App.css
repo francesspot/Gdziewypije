@@ -643,6 +643,116 @@
   font-size: 1.55rem;
 }
 
+.account-button {
+  position: absolute;
+  top: calc(var(--panel-gap) + 1rem);
+  left: 50%;
+  z-index: 4;
+  /* Długa nazwa użytkownika nie najeżdża na przyciski TOP i Lista */
+  max-width: 40%;
+  padding: 0.35rem 0.95rem;
+  overflow: hidden;
+  transform: translateX(-50%);
+  border: 2.5px solid var(--ink-oak);
+  border-radius: 24px 18px 26px 16px / 16px 26px 14px 22px;
+  background: var(--accent-beer);
+  color: var(--ink-oak);
+  font-family: var(--font-sans);
+  font-size: 1.25rem;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--ink-oak);
+  filter: url(#sketch);
+  transition: box-shadow 120ms var(--ease-sketch);
+}
+
+.account-button:hover {
+  box-shadow: 3px 3px 0px var(--ink-oak);
+}
+
+.account-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--panel-gap);
+  background: color-mix(in srgb, var(--bg-cellar) 55%, transparent);
+}
+
+.account-panel {
+  width: min(100%, 24rem);
+  max-height: 100%;
+  overflow-y: auto;
+  padding: 1rem 1.2rem 1.4rem;
+  border: 2.5px solid var(--ink-oak);
+  border-radius: 28px 34px 30px 26px / 32px 26px 34px 28px;
+  background: var(--bg-foam);
+  box-shadow: 3px 3px 0px var(--ink-oak);
+  filter: url(#sketch);
+}
+
+.account-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1rem;
+}
+
+.account-header h1 {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 2.4rem;
+  font-weight: 400;
+}
+
+.account-close {
+  width: 2.4rem;
+  height: 2.4rem;
+  padding: 0;
+  border: 2.5px solid var(--ink-oak);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  background: var(--bg-foam);
+  color: var(--ink-oak);
+  font-size: 1.6rem;
+  line-height: 1;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--ink-oak);
+}
+
+.account-tabs {
+  display: flex;
+  border: 2.5px solid var(--ink-oak);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.account-tab {
+  flex: 1;
+  padding: 0.45rem 0.5rem;
+  border: 0;
+  background: var(--bg-foam);
+  color: var(--ink-oak);
+  font-size: 1.05rem;
+  cursor: pointer;
+}
+
+.account-tab + .account-tab {
+  border-left: 2.5px solid var(--ink-oak);
+}
+
+.account-tab[aria-pressed='true'] {
+  background: var(--bg-cellar);
+  color: var(--bg-foam);
+}
+
+.account-user {
+  margin: 0 0 1rem;
+  overflow-wrap: anywhere;
+}
+
 .sr-only {
   position: absolute;
   width: 1px;
@@ -653,6 +763,7 @@
 
 @media (prefers-reduced-motion: reduce) {
   .edge-button,
+  .account-button,
   .map-controls button,
   .panel-switch-button,
   .side-panel,
