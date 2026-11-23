@@ -20,6 +20,14 @@ function validateAmount(text) {
   return ''
 }
 
+// Pusta lista oznacza, że administrator wyłączył wszystkie napoje
+function drinkPlaceholder(loading, count) {
+  if (loading) {
+    return 'Ładowanie…'
+  }
+  return count === 0 ? 'Brak napojów do wyboru' : 'Wybierz napój'
+}
+
 // Komponent dostaje key z wybranym napojem, więc „zmiana” przy innej cenie montuje go od nowa z tym napojem
 function PriceReportForm({ initialDrinkId, onSubmit, onCancel }) {
   const [drinks, setDrinks] = useState([])
@@ -101,7 +109,7 @@ function PriceReportForm({ initialDrinkId, onSubmit, onCancel }) {
           aria-describedby={fieldErrors.drink_id ? 'price-report-drink-error' : undefined}
           onChange={(event) => setDrinkId(event.target.value)}
         >
-          <option value="">{drinksLoading ? 'Ładowanie…' : 'Wybierz napój'}</option>
+          <option value="">{drinkPlaceholder(drinksLoading, drinks.length)}</option>
           {drinks.map((drink) => (
             <option key={drink.id} value={drink.id}>
               {drink.name} {drink.volume_ml} ml

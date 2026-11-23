@@ -74,6 +74,15 @@ function BarPopup({
     // barsVersion rośnie po zapisaniu oceny, więc okienko pobiera nową średnią
   }, [barId, barsVersion])
 
+  // Komunikat sukcesu znika po chwili tak jak błąd ulubionych w App; błędy zostają do kolejnej akcji
+  useEffect(() => {
+    if (!priceMessage) {
+      return
+    }
+    const timer = setTimeout(() => setPriceMessage(''), 4000)
+    return () => clearTimeout(timer)
+  }, [priceMessage])
+
   useEffect(() => {
     function handleKeyDown(event) {
       if (event.key === 'Escape') {
