@@ -92,7 +92,16 @@ function createBarMarkerIcon(mode, bar) {
   })
 }
 
-function MapScreen({ topOpen, listOpen, selectedBarId, onSelectBar, onOpenTop, onOpenList }) {
+function MapScreen({
+  topOpen,
+  listOpen,
+  selectedBarId,
+  favoriteIds,
+  onSelectBar,
+  onToggleFavorite,
+  onOpenTop,
+  onOpenList,
+}) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
   const markersLayerRef = useRef(null)
@@ -232,6 +241,8 @@ function MapScreen({ topOpen, listOpen, selectedBarId, onSelectBar, onOpenTop, o
         <BarPopup
           key={selectedBarId}
           barId={selectedBarId}
+          isFavorite={favoriteIds.includes(selectedBarId)}
+          onToggleFavorite={onToggleFavorite}
           onClose={() => onSelectBar(null)}
         />
       ) : null}

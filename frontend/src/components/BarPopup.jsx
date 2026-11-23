@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getBar } from '../api'
+import FavoriteStar from './FavoriteStar'
 
 function formatRating(avgRating) {
   return avgRating == null ? 'brak ocen' : avgRating.toFixed(1)
@@ -13,7 +14,7 @@ function formatPrice(amount) {
 }
 
 // Komponent dostaje key={barId}, więc wybór innego baru montuje go od nowa ze stanem ładowania.
-function BarPopup({ barId, onClose }) {
+function BarPopup({ barId, isFavorite, onToggleFavorite, onClose }) {
   const [bar, setBar] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -61,6 +62,13 @@ function BarPopup({ barId, onClose }) {
     <section className="bar-popup" aria-label={bar ? `Bar ${bar.name}` : 'Szczegóły baru'}>
       <header className="bar-popup-header">
         <h2>{bar ? bar.name : 'Bar'}</h2>
+        {bar ? (
+          <FavoriteStar
+            barName={bar.name}
+            isFavorite={isFavorite}
+            onToggle={() => onToggleFavorite(barId)}
+          />
+        ) : null}
         <button className="bar-popup-close" type="button" onClick={onClose} aria-label="Zamknij okienko baru">
           ×
         </button>
