@@ -86,7 +86,8 @@
   text-align: right;
 }
 
-.map-fetch-error {
+.map-fetch-error,
+.favorite-error {
   position: absolute;
   top: calc(var(--panel-gap) + 1rem + 3.25rem);
   left: 50%;
@@ -105,6 +106,11 @@
   pointer-events: none;
   box-shadow: 2px 2px 0 var(--ink-oak);
   filter: url(#sketch);
+}
+
+/* Nad panelami i okienkiem baru, bo gwiazdka ulubionych jest na liście */
+.favorite-error {
+  z-index: 12;
 }
 
 .bar-popup {
