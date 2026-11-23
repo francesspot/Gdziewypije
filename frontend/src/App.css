@@ -817,6 +817,71 @@
   width: min(100%, 40rem);
 }
 
+.admin-section {
+  margin-top: 0.4rem;
+}
+
+.admin-list {
+  /* Przewija się sama lista, a wyszukiwarka zostaje na górze */
+  max-height: 50vh;
+  margin: 0;
+  padding: 0 0.15rem 0 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow-y: auto;
+}
+
+.admin-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  border: 2px solid var(--ink-oak);
+  border-radius: 14px 18px 12px 16px / 16px 12px 18px 14px;
+  background: var(--bg-foam);
+}
+
+.admin-row.is-inactive {
+  background: var(--bg-coaster);
+}
+
+.admin-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-row-name {
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-row-meta {
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-action {
+  flex-shrink: 0;
+  padding: 0.3rem 0.7rem;
+  border: 2px solid var(--ink-oak);
+  border-radius: 999px;
+  background: var(--bg-foam);
+  color: var(--ink-oak);
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ink-oak);
+}
+
+.admin-action:disabled {
+  opacity: 0.6;
+  cursor: wait;
+}
+
 .account-submit:disabled {
   opacity: 0.6;
   cursor: wait;

@@ -129,3 +129,15 @@ export function login(email, password) {
 export function getMe() {
   return request('/auth/me')
 }
+
+// Ścieżki administratora; backend odrzuca je z 403 dla zwykłego użytkownika
+export function getAdminBars() {
+  return request('/admin/bars')
+}
+
+export function setBarActive(barId, isActive) {
+  return request(`/admin/bars/${barId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ is_active: isActive }),
+  })
+}

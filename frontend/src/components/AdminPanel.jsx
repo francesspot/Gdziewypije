@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import AdminBars from './AdminBars'
 
 // WF.18: okno administratora z zakładkami barów i napojów; App renderuje je tylko dla roli admin
 function AdminPanel({ open, onClose }) {
@@ -61,6 +62,7 @@ function AdminPanel({ open, onClose }) {
             Napoje
           </button>
         </div>
+        {tab === 'bars' ? <AdminBars /> : null}
       </section>
     </div>
   )
