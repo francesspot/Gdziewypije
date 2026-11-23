@@ -137,3 +137,23 @@ export function login(email, password) {
 export function getMe() {
   return request('/auth/me')
 }
+
+// PUT, bo kolejna ocena tej samej osoby zastępuje poprzednią (T4)
+export function rateBar(barId, value) {
+  return request(`/bars/${barId}/rating`, {
+    method: 'PUT',
+    body: JSON.stringify({ value }),
+  })
+}
+
+export function getFavorites() {
+  return request('/favorites')
+}
+
+export function addFavorite(barId) {
+  return request(`/bars/${barId}/favorite`, { method: 'POST' })
+}
+
+export function removeFavorite(barId) {
+  return request(`/bars/${barId}/favorite`, { method: 'DELETE' })
+}
