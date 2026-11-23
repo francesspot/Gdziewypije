@@ -1,10 +1,18 @@
 import { useEffect, useState } from 'react'
 import { getAdminDrinks, setDrinkActive } from '../api'
 import { DRINK_CATEGORIES } from '../drinkCategories'
+import AdminDrinkForm from './AdminDrinkForm'
 
-// Zakładka napojów w panelu administratora: wszystkie napoje, także wyłączone, z wyłączaniem i włączaniem
+// Ta sama kolejność co w GET /admin/drinks: po nazwie, pojemności i id
+function compareDrinks(a, b) {
+  return a.name.localeCompare(b.name, 'pl') || a.volume_ml - b.volume_ml || a.id - b.id
+}
+
+// Zakładka napojów w panelu administratora: wszystkie napoje, także wyłączone, z dodawaniem, edycją i wyłączaniem
 function AdminDrinks() {
   const [drinks, setDrinks] = useState([])
+  // null: widać listę, 'new': formularz nowego napoju, obiekt napoju: formularz edycji tego napoju
+  const [editing, setEditing] = useState(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
   // Id napoju, dla którego trwa zapis, żeby nie wysłać drugiego kliknięcia
@@ -48,8 +56,29 @@ function AdminDrinks() {
     }
   }
 
+  function handleSaved(saved) {
+    // Zapisany napój zastępuje starą wersję albo dochodzi jako nowy, a lista zostaje posortowana
+    setDrinks((current) => [...current.filter((item) => item.id !== saved.id), saved].sort(compareDrinks))
+    setEditing(null)
+  }
+
+  if (editing) {
+    return (
+      <AdminDrinkForm
+        drink={editing === 'new' ? null : editing}
+        onSaved={handleSaved}
+        onCancel={() => setEditing(null)}
+      />
+    )
+  }
+
   return (
     <div className="admin-section">
+      <div className="admin-toolbar">
+        <button className="account-submit" type="button" onClick={() => setEditing('new')}>
+          Dodaj napój
+        </button>
+      </div>
       {loading ? (
         <p className="list-status" role="status">
           Ładowanie…
@@ -73,6 +102,14 @@ function AdminDrinks() {
                 {drink.is_active ? '' : ' · wyłączony'}
               </span>
             </div>
+            <button
+              className="admin-action"
+              type="button"
+              onClick={() => setEditing(drink)}
+              aria-label={`Edytuj ${drink.name} ${drink.volume_ml} ml`}
+            >
+              Edytuj
+            </button>
             <button
               className="admin-action"
               type="button"

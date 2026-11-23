@@ -154,6 +154,14 @@ export function getAdminDrinks() {
   return request('/admin/drinks')
 }
 
+export function createDrink(data) {
+  return request('/admin/drinks', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function updateDrink(drinkId, data) {
+  return request(`/admin/drinks/${drinkId}`, { method: 'PUT', body: JSON.stringify(data) })
+}
+
 export function setDrinkActive(drinkId, isActive) {
   return request(`/admin/drinks/${drinkId}`, {
     method: 'PATCH',
