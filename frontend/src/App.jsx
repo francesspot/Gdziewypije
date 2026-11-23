@@ -8,6 +8,8 @@ function App() {
   const [topOpen, setTopOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
   const [favoriteIds, setFavoriteIds] = useState([])
+  // Stan w App, bo okienko baru otwiera zarówno marker na mapie, jak i pozycja na liście.
+  const [selectedBarId, setSelectedBarId] = useState(null)
 
   function toggleFavorite(barId) {
     setFavoriteIds((current) =>
@@ -34,6 +36,8 @@ function App() {
       <MapScreen
         topOpen={topOpen}
         listOpen={listOpen}
+        selectedBarId={selectedBarId}
+        onSelectBar={setSelectedBarId}
         onOpenTop={() => setTopOpen(true)}
         onOpenList={() => setListOpen(true)}
       />
@@ -49,6 +53,7 @@ function App() {
         open={listOpen}
         favoriteIds={favoriteIds}
         onToggleFavorite={toggleFavorite}
+        onSelectBar={setSelectedBarId}
         onClose={() => setListOpen(false)}
         onSwitchToTop={() => {
           setListOpen(false)
