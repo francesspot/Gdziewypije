@@ -6,7 +6,7 @@ function formatRating(avgRating) {
   return avgRating == null ? '–' : avgRating.toFixed(1)
 }
 
-function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop }) {
+function ListPanel({ open, barsVersion, favoriteIds, onToggleFavorite, onClose, onSwitchToTop }) {
   const [query, setQuery] = useState('')
   const [bars, setBars] = useState([])
   const [error, setError] = useState('')
@@ -39,7 +39,8 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
     return () => {
       cancelled = true
     }
-  }, [])
+    // Zmiana barsVersion po zapisie w panelu administratora pobiera bary od nowa
+  }, [barsVersion])
 
   return (
     <aside

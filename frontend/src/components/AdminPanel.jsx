@@ -3,7 +3,8 @@ import AdminBars from './AdminBars'
 import AdminDrinks from './AdminDrinks'
 
 // WF.18: okno administratora z zakładkami barów i napojów; App renderuje je tylko dla roli admin
-function AdminPanel({ open, onClose }) {
+// onChanged: wywoływane po każdym zapisie, bo zmiana baru lub napoju zmienia mapę i listę
+function AdminPanel({ open, onClose, onChanged }) {
   const [tab, setTab] = useState('bars')
 
   useEffect(() => {
@@ -63,7 +64,7 @@ function AdminPanel({ open, onClose }) {
             Napoje
           </button>
         </div>
-        {tab === 'bars' ? <AdminBars /> : <AdminDrinks />}
+        {tab === 'bars' ? <AdminBars onChanged={onChanged} /> : <AdminDrinks onChanged={onChanged} />}
       </section>
     </div>
   )

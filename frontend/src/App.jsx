@@ -17,6 +17,8 @@ function App() {
   const [adminOpen, setAdminOpen] = useState(false)
   // Rola jest sprawdzana też w backendzie (403), tutaj decyduje tylko o pokazaniu panelu
   const isAdmin = user?.role === 'admin'
+  // Licznik zmian z panelu administratora; mapa i lista pobierają bary od nowa, gdy się zwiększy
+  const [barsVersion, setBarsVersion] = useState(0)
 
   useEffect(() => {
     // Token mógł wygasnąć albo konto zostało wyłączone, więc zapisana sesja jest sprawdzana w backendzie
@@ -94,6 +96,7 @@ function App() {
       <MapScreen
         topOpen={topOpen}
         listOpen={listOpen}
+        barsVersion={barsVersion}
         onOpenTop={() => setTopOpen(true)}
         onOpenList={() => setListOpen(true)}
       />
@@ -117,6 +120,7 @@ function App() {
       />
       <ListPanel
         open={listOpen}
+        barsVersion={barsVersion}
         favoriteIds={favoriteIds}
         onToggleFavorite={toggleFavorite}
         onClose={() => setListOpen(false)}
@@ -133,7 +137,11 @@ function App() {
         onLogout={handleLogout}
         onOpenAdmin={openAdmin}
       />
-      <AdminPanel open={adminOpen && isAdmin} onClose={() => setAdminOpen(false)} />
+      <AdminPanel
+        open={adminOpen && isAdmin}
+        onClose={() => setAdminOpen(false)}
+        onChanged={() => setBarsVersion((version) => version + 1)}
+      />
     </div>
   )
 }
