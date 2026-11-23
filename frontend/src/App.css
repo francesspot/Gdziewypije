@@ -821,6 +821,47 @@
   margin-top: 0.4rem;
 }
 
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+}
+
+.admin-toolbar .search {
+  flex: 1;
+}
+
+.admin-toolbar .account-submit {
+  flex-shrink: 0;
+}
+
+.admin-form-title {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 1.6rem;
+  font-weight: 400;
+}
+
+/* Szerokość i długość geograficzna obok siebie, a na wąskim ekranie jedna pod drugą */
+.admin-form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.9rem;
+}
+
+.admin-form-buttons {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.admin-form-buttons .account-submit {
+  flex: 1;
+}
+
+.admin-cancel {
+  background: var(--bg-foam);
+}
+
 .admin-list {
   /* Przewija się sama lista, a wyszukiwarka zostaje na górze */
   max-height: 50vh;

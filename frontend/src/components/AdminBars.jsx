@@ -1,9 +1,17 @@
 import { useEffect, useState } from 'react'
 import { getAdminBars, setBarActive } from '../api'
+import AdminBarForm from './AdminBarForm'
 
-// Zakładka barów w panelu administratora: wszystkie bary, także wyłączone, z wyłączaniem i włączaniem
+// Ta sama kolejność co w GET /admin/bars: po nazwie, a przy równych nazwach po id
+function compareBars(a, b) {
+  return a.name.localeCompare(b.name, 'pl') || a.id - b.id
+}
+
+// Zakładka barów w panelu administratora: wszystkie bary, także wyłączone, z dodawaniem, edycją i wyłączaniem
 function AdminBars() {
   const [bars, setBars] = useState([])
+  // null: widać listę, 'new': formularz nowego baru, obiekt baru: formularz edycji tego baru
+  const [editing, setEditing] = useState(null)
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState('')
@@ -50,17 +58,38 @@ function AdminBars() {
     }
   }
 
+  function handleSaved(saved) {
+    // Zapisany bar zastępuje starą wersję albo dochodzi jako nowy, a lista zostaje posortowana
+    setBars((current) => [...current.filter((item) => item.id !== saved.id), saved].sort(compareBars))
+    setEditing(null)
+  }
+
+  if (editing) {
+    return (
+      <AdminBarForm
+        bar={editing === 'new' ? null : editing}
+        onSaved={handleSaved}
+        onCancel={() => setEditing(null)}
+      />
+    )
+  }
+
   return (
     <div className="admin-section">
-      <label className="search">
-        <span className="sr-only">Wyszukaj bar</span>
-        <input
-          type="search"
-          value={query}
-          onChange={(event) => setQuery(event.target.value)}
-          placeholder="Wyszukaj bar"
-        />
-      </label>
+      <div className="admin-toolbar">
+        <label className="search">
+          <span className="sr-only">Wyszukaj bar</span>
+          <input
+            type="search"
+            value={query}
+            onChange={(event) => setQuery(event.target.value)}
+            placeholder="Wyszukaj bar"
+          />
+        </label>
+        <button className="account-submit" type="button" onClick={() => setEditing('new')}>
+          Dodaj bar
+        </button>
+      </div>
       {loading ? (
         <p className="list-status" role="status">
           Ładowanie…
@@ -82,6 +111,14 @@ function AdminBars() {
                 {bar.is_active ? '' : ' · wyłączony'}
               </span>
             </div>
+            <button
+              className="admin-action"
+              type="button"
+              onClick={() => setEditing(bar)}
+              aria-label={`Edytuj ${bar.name}`}
+            >
+              Edytuj
+            </button>
             <button
               className="admin-action"
               type="button"

@@ -135,6 +135,14 @@ export function getAdminBars() {
   return request('/admin/bars')
 }
 
+export function createBar(data) {
+  return request('/admin/bars', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function updateBar(barId, data) {
+  return request(`/admin/bars/${barId}`, { method: 'PUT', body: JSON.stringify(data) })
+}
+
 export function setBarActive(barId, isActive) {
   return request(`/admin/bars/${barId}`, {
     method: 'PATCH',
