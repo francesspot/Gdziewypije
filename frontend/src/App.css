@@ -557,6 +557,30 @@
   color: var(--accent-brick);
 }
 
+.list-sort {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+}
+
+.list-sort button {
+  flex: 1;
+  padding: 0.3rem 0.8rem;
+  border: 2.5px solid var(--ink-oak);
+  border-radius: 22px 18px 24px 16px / 16px 24px 14px 22px;
+  background: var(--bg-foam);
+  color: var(--ink-oak);
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--ink-oak);
+}
+
+.list-sort button[aria-pressed='true'] {
+  background: var(--bg-coaster);
+}
+
 .bar-list {
   flex: 1;
   min-height: 0;

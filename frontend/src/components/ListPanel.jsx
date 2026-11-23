@@ -38,13 +38,16 @@ function BarListItem({ bar, isFavorite, onToggleFavorite }) {
 
 function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop }) {
   const [query, setQuery] = useState('')
+  const [sortOrder, setSortOrder] = useState('best')
   const [rankedBars, setRankedBars] = useState([])
   const [unratedBars, setUnratedBars] = useState([])
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
   const normalized = query.trim().toLowerCase()
   const matchesQuery = (bar) => bar.name.toLowerCase().includes(normalized)
-  const visibleRanked = rankedBars.filter(matchesQuery)
+  const filteredRanked = rankedBars.filter(matchesQuery)
+  // Od najgorszych to odwrócony ranking z backendu, więc miejsca przy barach się nie zmieniają.
+  const visibleRanked = sortOrder === 'worst' ? [...filteredRanked].reverse() : filteredRanked
   const visibleUnrated = unratedBars.filter(matchesQuery)
   const isEmpty = !loading && !error && visibleRanked.length === 0 && visibleUnrated.length === 0
 
@@ -127,6 +130,22 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
           />
         </svg>
       </label>
+      <div className="list-sort" role="group" aria-label="Kolejność rankingu">
+        <button
+          type="button"
+          aria-pressed={sortOrder === 'best'}
+          onClick={() => setSortOrder('best')}
+        >
+          Najlepsze
+        </button>
+        <button
+          type="button"
+          aria-pressed={sortOrder === 'worst'}
+          onClick={() => setSortOrder('worst')}
+        >
+          Najgorsze
+        </button>
+      </div>
       {loading ? (
         <p className="list-status" role="status">
           Ładowanie…
