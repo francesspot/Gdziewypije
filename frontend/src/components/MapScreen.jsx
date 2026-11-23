@@ -5,6 +5,7 @@ import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { getBars } from '../api'
+import BarPopup from './BarPopup'
 
 const WROCLAW_CENTER = [51.11, 17.04]
 const INITIAL_ZOOM = 13
@@ -91,7 +92,7 @@ function createBarMarkerIcon(mode, bar) {
   })
 }
 
-function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
+function MapScreen({ topOpen, listOpen, selectedBarId, onSelectBar, onOpenTop, onOpenList }) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
   const markersLayerRef = useRef(null)
@@ -138,6 +139,23 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
   }, [])
 
   useEffect(() => {
+    if (!mapReady) {
+      return
+    }
+    const map = mapRef.current
+
+    // Kliknięcie markera nie dociera do mapy (bubblingMouseEvents: false), więc to tylko klik w puste miejsce.
+    function handleMapClick() {
+      onSelectBar(null)
+    }
+
+    map.on('click', handleMapClick)
+    return () => {
+      map.off('click', handleMapClick)
+    }
+  }, [mapReady, onSelectBar])
+
+  useEffect(() => {
     let cancelled = false
 
     getBars()
@@ -176,7 +194,9 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
     for (const bar of bars) {
       const point = [bar.latitude, bar.longitude]
       // title daje podpowiedź po najechaniu.
-      L.marker(point, { icon: createBarMarkerIcon(mode, bar), title: bar.name }).addTo(layer)
+      L.marker(point, { icon: createBarMarkerIcon(mode, bar), title: bar.name })
+        .on('click', () => onSelectBar(bar.id))
+        .addTo(layer)
       boundsPoints.push(point)
     }
 
@@ -198,7 +218,7 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
         markersLayerRef.current = null
       }
     }
-  }, [bars, mode, mapReady])
+  }, [bars, mode, mapReady, onSelectBar])
 
   return (
     <section className="map-screen" aria-label="Mapa">
@@ -208,6 +228,13 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
         </p>
       ) : null}
       <div className="map-canvas" ref={mapContainerRef} />
+      {selectedBarId != null ? (
+        <BarPopup
+          key={selectedBarId}
+          barId={selectedBarId}
+          onClose={() => onSelectBar(null)}
+        />
+      ) : null}
       {!topOpen ? (
         <button className="edge-button edge-button-left" type="button" onClick={onOpenTop}>
           TOP

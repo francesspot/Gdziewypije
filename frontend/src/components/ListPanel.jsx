@@ -6,7 +6,7 @@ function formatRating(avgRating) {
   return avgRating == null ? '–' : avgRating.toFixed(1)
 }
 
-function BarListItem({ bar, isFavorite, onToggleFavorite }) {
+function BarListItem({ bar, isFavorite, onToggleFavorite, onSelectBar }) {
   return (
     <li>
       {/* Pusta komórka bez miejsca wyrównuje nazwy w obu sekcjach */}
@@ -30,13 +30,15 @@ function BarListItem({ bar, isFavorite, onToggleFavorite }) {
           />
         </svg>
       </button>
-      <span className="bar-name">{bar.name}</span>
+      <button className="bar-name" type="button" onClick={() => onSelectBar(bar.id)}>
+        {bar.name}
+      </button>
       <span className="rating">{formatRating(bar.avg_rating)}</span>
     </li>
   )
 }
 
-function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop }) {
+function ListPanel({ open, favoriteIds, onToggleFavorite, onSelectBar, onClose, onSwitchToTop }) {
   const [query, setQuery] = useState('')
   const [sortOrder, setSortOrder] = useState('best')
   const [rankedBars, setRankedBars] = useState([])
@@ -171,6 +173,7 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
                 bar={bar}
                 isFavorite={favoriteIds.includes(bar.id)}
                 onToggleFavorite={onToggleFavorite}
+                onSelectBar={onSelectBar}
               />
             ))}
           </ul>
@@ -185,6 +188,7 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
                   bar={bar}
                   isFavorite={favoriteIds.includes(bar.id)}
                   onToggleFavorite={onToggleFavorite}
+                  onSelectBar={onSelectBar}
                 />
               ))}
             </ul>

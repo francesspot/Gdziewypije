@@ -107,6 +107,127 @@
   filter: url(#sketch);
 }
 
+/* Nad mapą i kontrolkami, ale pod panelami TOP i Lista (z-index 10). */
+.bar-popup {
+  position: absolute;
+  left: 50%;
+  bottom: 1rem;
+  /* Nad panelami bocznymi, bo na wąskim ekranie lista zasłania całą mapę. */
+  z-index: 11;
+  width: min(calc(100% - var(--panel-gap) * 2), 22rem);
+  padding: 0.8rem 1rem 1rem;
+  transform: translateX(-50%);
+  border: 2.5px solid var(--ink-oak);
+  border-radius: 22px 28px 20px 26px / 26px 20px 28px 22px;
+  background: var(--bg-foam);
+  box-shadow: 3px 3px 0 var(--ink-oak);
+  filter: url(#sketch);
+}
+
+.bar-popup-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.bar-popup-header h2 {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 1.6rem;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.bar-popup-close {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  padding: 0;
+  border: 2px solid var(--ink-oak);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  background: var(--bg-foam);
+  color: var(--ink-oak);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.bar-popup-close:hover {
+  background: var(--bg-coaster);
+}
+
+.bar-popup-status,
+.bar-popup-error {
+  margin: 0.6rem 0 0;
+}
+
+.bar-popup-error {
+  color: var(--accent-brick);
+}
+
+.bar-popup-rating {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0;
+}
+
+.bar-popup-rating-value {
+  font-family: var(--font-hand);
+  font-size: 1.55rem;
+}
+
+.bar-popup-rating-count {
+  font-size: 0.9rem;
+}
+
+.bar-popup-prices-title {
+  margin: 0.8rem 0 0.35rem;
+  font-size: 1rem;
+}
+
+.bar-popup-no-prices {
+  margin: 0;
+}
+
+/* Przy wielu napojach przewija się sama lista, a okienko nie zasłania całej mapy. */
+.bar-popup-prices {
+  max-height: 12rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  overflow-y: auto;
+}
+
+.bar-popup-prices li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.6rem;
+}
+
+.bar-popup-drink {
+  flex: 1;
+}
+
+.bar-popup-amount {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bar-popup-verify {
+  padding: 0.05rem 0.5rem;
+  border: 2px solid var(--accent-brick);
+  border-radius: 999px;
+  color: var(--accent-brick);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
 .edge-button {
   position: absolute;
   /* Taki sam offset jak przyciski strzałek w nagłówkach paneli. */
@@ -313,6 +434,13 @@
   margin-top: 0.35rem;
 }
 
+.top-empty {
+  margin: 0.5rem 0 0;
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  text-align: center;
+}
+
 .top-divider {
   width: calc(100% + 2.4rem);
   margin: 0.35rem -1.2rem 0;
@@ -410,7 +538,8 @@
   flex: 1;
   min-height: 0;
   display: grid;
-  grid-template-columns: repeat(3, 1fr);
+  /* minmax(0, 1fr): długie słowo w nazwie baru nie rozpycha kolumny poza panel */
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 0.75rem;
   align-items: end;
   width: 100%;
@@ -440,12 +569,14 @@
 }
 
 .beer-stack-label {
+  /* Bez limitu etykieta ma szerokość tekstu i break-word nie ma gdzie złamać długiego słowa */
+  max-width: 100%;
   margin: 0 0 0.5rem;
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.1rem;
-  padding: 0.2rem 0.55rem;
+  padding: 0.2rem;
   text-align: center;
   border-radius: 12px 10px 14px 8px / 10px 14px 8px 12px;
   transition: background 150ms var(--ease-sketch);
@@ -457,13 +588,16 @@
 
 .beer-stack-name {
   font-family: var(--font-hand);
-  font-size: 1.1rem;
+  font-size: 1.2rem;
   line-height: 1.1;
+  max-width: 100%;
+  overflow-wrap: break-word;
 }
 
 .beer-stack-meta {
   font-family: var(--font-hand);
-  font-size: 1.35rem;
+  font-size: 3.0rem;
+  font-weight: 700;
   line-height: 1;
 }
 
@@ -475,19 +609,19 @@
 }
 
 .beer-stack-mug {
-  width: 100%;
-  max-width: 88px;
-  margin-bottom: -3px;
+  width: min(100%, 11vh);
+  max-width: 100%;
+  margin-bottom: -6%;
   transform: translateX(var(--mug-x)) rotate(var(--mug-r));
 }
 
-.beer-stack-mug:last-child {
+/* column-reverse: pierwszy kufel jest na dole, więc zeruje się jego margines, nie ostatniego. */
+.beer-stack-mug:first-child {
   margin-bottom: 0;
 }
 
 .beer-mug-icon {
   width: 100%;
-  max-width: 88px;
   height: auto;
   display: block;
 }
@@ -657,6 +791,9 @@
   border-radius: 22px 18px 24px 16px / 16px 24px 14px 22px;
   font-family: var(--font-hand);
   font-size: 1.2rem;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
   background: var(--bg-foam);
   box-shadow: 2px 2px 0px var(--ink-oak);
   transition:
@@ -707,6 +844,10 @@
 }
 
 @media (max-width: 1024px) {
+  .beer-stack-mug {
+    width: min(100%, 12vh, 28vw);
+  }
+
   .panel-switch-button {
     display: block;
   }
@@ -729,5 +870,20 @@
 
   .app-list-open .map-controls {
     right: var(--panel-gap);
+  }
+}
+
+@media (max-width: 640px) {
+  .beer-stack-mug {
+    width: min(100%, 9vh, 24vw);
+  }
+
+  .beer-stack-name {
+    font-size: 1.1rem;
+  }
+
+  .beer-stack-meta {
+    font-size: 1.8rem;
+    font-weight: 700;
   }
 }
