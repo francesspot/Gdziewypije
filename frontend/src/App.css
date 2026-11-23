@@ -107,7 +107,6 @@
   filter: url(#sketch);
 }
 
-/* Nad mapą i kontrolkami, ale pod panelami TOP i Lista (z-index 10). */
 .bar-popup {
   position: absolute;
   left: 50%;
