@@ -97,8 +97,10 @@ function MapScreen({
   listOpen,
   selectedBarId,
   favoriteIds,
+  barsVersion,
   onSelectBar,
   onToggleFavorite,
+  onRate,
   onOpenTop,
   onOpenList,
 }) {
@@ -185,7 +187,7 @@ function MapScreen({
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [barsVersion])
 
   useEffect(() => {
     if (!mapReady) {
@@ -242,7 +244,9 @@ function MapScreen({
           key={selectedBarId}
           barId={selectedBarId}
           isFavorite={favoriteIds.includes(selectedBarId)}
+          barsVersion={barsVersion}
           onToggleFavorite={onToggleFavorite}
+          onRate={onRate}
           onClose={() => onSelectBar(null)}
         />
       ) : null}
