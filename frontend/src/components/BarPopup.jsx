@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getBar } from '../api'
 import FavoriteStar from './FavoriteStar'
+import PriceReportForm from './PriceReportForm'
 import RatingStars from './RatingStars'
 
 function formatRating(avgRating) {
@@ -14,13 +15,22 @@ function formatPrice(amount) {
   })} zł`
 }
 
-// Komponent dostaje key={barId}, więc wybór innego baru montuje go od nowa ze stanem ładowania.
 const CONFIRM_MESSAGES = {
   confirm: 'Cena potwierdzona (+1 pkt)',
-  change: 'Zapisano zgłoszenie zmiany ceny',
+  change: 'Zapisano zgłoszenie zmiany ceny. Podaj nową cenę poniżej.',
 }
 
-function BarPopup({ barId, isFavorite, barsVersion, onToggleFavorite, onRate, onConfirmPrice, onClose }) {
+// Komponent dostaje key={barId}, więc wybór innego baru montuje go od nowa ze stanem ładowania.
+function BarPopup({
+  barId,
+  isFavorite,
+  barsVersion,
+  onToggleFavorite,
+  onRate,
+  onConfirmPrice,
+  onReportPrice,
+  onClose,
+}) {
   const [bar, setBar] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -30,8 +40,11 @@ function BarPopup({ barId, isFavorite, barsVersion, onToggleFavorite, onRate, on
   const [ratingError, setRatingError] = useState('')
   // Id ceny w trakcie zapisu; blokuje jej przyciski, żeby dwa kliknięcia nie wysłały dwóch potwierdzeń
   const [confirmingPriceId, setConfirmingPriceId] = useState(null)
-  const [confirmMessage, setConfirmMessage] = useState('')
-  const [confirmError, setConfirmError] = useState('')
+  // Wspólne komunikaty potwierdzenia i zgłoszenia ceny, bo dotyczą tej samej listy cen
+  const [priceMessage, setPriceMessage] = useState('')
+  const [priceError, setPriceError] = useState('')
+  // null to zamknięty formularz, a { drinkId } otwarty; drinkId jest ustawiony po kliknięciu „zmiana”
+  const [reportForm, setReportForm] = useState(null)
 
   useEffect(() => {
     let cancelled = false
@@ -88,19 +101,33 @@ function BarPopup({ barId, isFavorite, barsVersion, onToggleFavorite, onRate, on
     }
   }
 
-  async function handleConfirmPrice(priceId, kind) {
-    setConfirmingPriceId(priceId)
-    setConfirmMessage('')
-    setConfirmError('')
+  async function handleConfirmPrice(price, kind) {
+    setConfirmingPriceId(price.price_id)
+    setPriceMessage('')
+    setPriceError('')
     try {
-      if (await onConfirmPrice(priceId, kind)) {
-        setConfirmMessage(CONFIRM_MESSAGES[kind])
+      if (await onConfirmPrice(price.price_id, kind)) {
+        setPriceMessage(CONFIRM_MESSAGES[kind])
+        // PU.03: po „zmiana” nowa cena jest zgłaszana jak każda inna (T2), więc formularz ma już wybrany napój
+        if (kind === 'change') {
+          setReportForm({ drinkId: price.drink_id })
+        }
       }
     } catch (err) {
       // 409 ma gotowy komunikat z backendu: „Ta cena została już potwierdzona z tego konta”
-      setConfirmError(err.message)
+      setPriceError(err.message)
     } finally {
       setConfirmingPriceId(null)
+    }
+  }
+
+  // Błędy nie są tu łapane, bo formularz pokazuje je przy polach albo pod sobą
+  async function handleReportPrice(drinkId, amount) {
+    setPriceMessage('')
+    setPriceError('')
+    if (await onReportPrice(barId, drinkId, amount)) {
+      setReportForm(null)
+      setPriceMessage('Cena zapisana (+5 pkt)')
     }
   }
 
@@ -169,7 +196,7 @@ function BarPopup({ barId, isFavorite, barsVersion, onToggleFavorite, onRate, on
                     <button
                       type="button"
                       disabled={confirmingPriceId === price.price_id}
-                      onClick={() => handleConfirmPrice(price.price_id, 'confirm')}
+                      onClick={() => handleConfirmPrice(price, 'confirm')}
                       aria-label={`Cena ${price.drink_name} ${price.volume_ml} ml zgadza się`}
                     >
                       zgadza się
@@ -177,7 +204,7 @@ function BarPopup({ barId, isFavorite, barsVersion, onToggleFavorite, onRate, on
                     <button
                       type="button"
                       disabled={confirmingPriceId === price.price_id}
-                      onClick={() => handleConfirmPrice(price.price_id, 'change')}
+                      onClick={() => handleConfirmPrice(price, 'change')}
                       aria-label={`Cena ${price.drink_name} ${price.volume_ml} ml jest inna`}
                     >
                       zmiana
@@ -187,16 +214,28 @@ function BarPopup({ barId, isFavorite, barsVersion, onToggleFavorite, onRate, on
               ))}
             </ul>
           )}
-          {confirmMessage ? (
+          {priceMessage ? (
             <p className="bar-popup-message" role="status">
-              {confirmMessage}
+              {priceMessage}
             </p>
           ) : null}
-          {confirmError ? (
+          {priceError ? (
             <p className="bar-popup-error" role="alert">
-              {confirmError}
+              {priceError}
             </p>
           ) : null}
+          {reportForm ? (
+            <PriceReportForm
+              key={reportForm.drinkId ?? 'new'}
+              initialDrinkId={reportForm.drinkId}
+              onSubmit={handleReportPrice}
+              onCancel={() => setReportForm(null)}
+            />
+          ) : (
+            <button className="bar-popup-report" type="button" onClick={() => setReportForm({ drinkId: null })}>
+              zgłoś cenę
+            </button>
+          )}
         </>
       ) : null}
     </section>
