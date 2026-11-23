@@ -102,6 +102,20 @@ DRINK_COLUMNS = "id, name, category, volume_ml, is_active"
 DUPLICATE_DRINK = "Napój o tej nazwie i pojemności już istnieje"
 
 
+@router.get(
+    "/drinks",
+    response_model=list[DrinkResponse],
+    summary="Lista wszystkich napojów",
+    description=(
+        "Zwraca wszystkie napoje razem z wyłączonymi, posortowane po nazwie i pojemności. "
+        "Wymaga konta administratora."
+    ),
+)
+def list_all_drinks(conn: psycopg.Connection = Depends(get_connection)) -> list[dict]:
+    # Wyłączone napoje też są na liście, żeby panel mógł je włączyć z powrotem
+    return conn.execute(f"SELECT {DRINK_COLUMNS} FROM drinks ORDER BY name, volume_ml, id").fetchall()
+
+
 @router.post(
     "/drinks",
     status_code=201,
