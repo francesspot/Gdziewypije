@@ -74,6 +74,7 @@ def drink_data(tag, **changes):
 
 # Wszystkie ścieżki modułu z poprawnymi danymi, żeby odmowa wynikała z roli, a nie z walidacji
 ADMIN_ROUTES = [
+    ("get", "/admin/bars", None),
     ("post", "/admin/bars", bar_data("x")),
     ("put", "/admin/bars/1", bar_data("x")),
     ("patch", "/admin/bars/1", {"is_active": False}),
@@ -189,6 +190,23 @@ def test_enabled_bar_returns_to_views(client, admin_headers, tag):
     assert response.json()["is_active"] is True
     with connect() as conn:
         assert conn.execute("SELECT 1 FROM v_bar_stats WHERE bar_id = %s", (bar_id,)).fetchone() is not None
+
+
+def test_list_all_bars_includes_disabled_bar(client, admin_headers, tag):
+    active_id = client.post("/admin/bars", json=bar_data(tag), headers=admin_headers).json()["id"]
+    disabled_data = bar_data(tag, name=f"{tag} Zamknięty")
+    disabled_id = client.post("/admin/bars", json=disabled_data, headers=admin_headers).json()["id"]
+    client.patch(f"/admin/bars/{disabled_id}", json={"is_active": False}, headers=admin_headers)
+
+    response = client.get("/admin/bars", headers=admin_headers)
+
+    assert response.status_code == 200
+    bars = {bar["id"]: bar for bar in response.json()}
+    assert bars[active_id]["is_active"] is True
+    assert bars[disabled_id]["is_active"] is False
+    # Publiczna lista /bars nie pokazuje wyłączonego baru
+    public_ids = [bar["id"] for bar in client.get("/bars").json()]
+    assert disabled_id not in public_ids
 
 
 # Napoje

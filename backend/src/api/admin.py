@@ -19,6 +19,20 @@ BAR_COLUMNS = """
 """
 
 
+@router.get(
+    "/bars",
+    response_model=list[BarResponse],
+    summary="Lista wszystkich barów",
+    description=(
+        "Zwraca wszystkie bary razem z wyłączonymi, posortowane po nazwie. "
+        "Wymaga konta administratora."
+    ),
+)
+def list_all_bars(conn: psycopg.Connection = Depends(get_connection)) -> list[dict]:
+    # Odczyt z tabeli, a nie z v_bar_stats, bo panel musi pokazać też wyłączone bary, żeby dało się je włączyć
+    return conn.execute(f"SELECT {BAR_COLUMNS} FROM bars ORDER BY name, id").fetchall()
+
+
 @router.post(
     "/bars",
     status_code=201,
