@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { clearSession, getMe, getSession, setSession } from './api'
 import AccountPanel from './components/AccountPanel'
+import AdminPanel from './components/AdminPanel'
 import ListPanel from './components/ListPanel'
 import MapScreen from './components/MapScreen'
 import TopPanel from './components/TopPanel'
@@ -13,6 +14,9 @@ function App() {
   const [accountOpen, setAccountOpen] = useState(false)
   // Sesja z localStorage, żeby po odświeżeniu strony użytkownik był dalej zalogowany
   const [user, setUser] = useState(() => getSession()?.user ?? null)
+  const [adminOpen, setAdminOpen] = useState(false)
+  // Rola jest sprawdzana też w backendzie (403), tutaj decyduje tylko o pokazaniu panelu
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
     // Token mógł wygasnąć albo konto zostało wyłączone, więc zapisana sesja jest sprawdzana w backendzie
@@ -57,6 +61,12 @@ function App() {
     clearSession()
     setUser(null)
     setAccountOpen(false)
+    setAdminOpen(false)
+  }
+
+  function openAdmin() {
+    setAccountOpen(false)
+    setAdminOpen(true)
   }
 
   function toggleFavorite(barId) {
@@ -121,7 +131,9 @@ function App() {
         onClose={() => setAccountOpen(false)}
         onLoggedIn={handleLoggedIn}
         onLogout={handleLogout}
+        onOpenAdmin={openAdmin}
       />
+      <AdminPanel open={adminOpen && isAdmin} onClose={() => setAdminOpen(false)} />
     </div>
   )
 }

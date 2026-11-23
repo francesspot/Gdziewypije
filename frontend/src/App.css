@@ -807,6 +807,16 @@
   background: var(--bg-foam);
 }
 
+.account-admin {
+  width: 100%;
+  margin-bottom: 0.8rem;
+}
+
+/* Panel administratora mieści listy barów i formularze, więc jest szerszy niż okno konta */
+.admin-panel {
+  width: min(100%, 40rem);
+}
+
 .account-submit:disabled {
   opacity: 0.6;
   cursor: wait;
