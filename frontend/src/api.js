@@ -103,12 +103,20 @@ export async function request(path, options = {}) {
   return response.json()
 }
 
+export function getRanking() {
+  return request('/ranking')
+}
+
 export function getBars() {
   return request('/bars')
 }
 
 export function getTopMonth() {
   return request('/top-month')
+}
+
+export function getBar(barId) {
+  return request(`/bars/${barId}`)
 }
 
 // Rejestracja i logowanie zwracają { access_token, token_type, user }, czyli gotową sesję
