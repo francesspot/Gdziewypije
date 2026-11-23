@@ -818,17 +818,20 @@
 }
 
 .admin-section {
-  margin-top: 0.4rem;
+  margin-top: 1rem;
 }
 
 .admin-toolbar {
   display: flex;
   align-items: center;
   gap: 0.6rem;
+  margin-bottom: 1rem;
 }
 
+/* Odstęp nad i pod wyszukiwarką daje .admin-section i .admin-toolbar, tak samo w obu zakładkach */
 .admin-toolbar .search {
   flex: 1;
+  margin: 0;
 }
 
 .admin-toolbar .account-submit {

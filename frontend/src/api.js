@@ -149,3 +149,14 @@ export function setBarActive(barId, isActive) {
     body: JSON.stringify({ is_active: isActive }),
   })
 }
+
+export function getAdminDrinks() {
+  return request('/admin/drinks')
+}
+
+export function setDrinkActive(drinkId, isActive) {
+  return request(`/admin/drinks/${drinkId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ is_active: isActive }),
+  })
+}
