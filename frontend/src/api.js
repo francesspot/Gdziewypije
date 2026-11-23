@@ -46,6 +46,20 @@ function formatDetail(detail) {
   return null
 }
 
+// Błędy 422 przypisane do pól, np. { email: '...' }, żeby formularz pokazał je przy właściwym polu
+function formatFieldErrors(detail) {
+  const fields = {}
+  if (!Array.isArray(detail)) {
+    return fields
+  }
+  for (const item of detail) {
+    if (item?.loc?.length > 1 && item.msg) {
+      fields[item.loc.at(-1)] = item.msg
+    }
+  }
+  return fields
+}
+
 export async function request(path, options = {}) {
   const { headers, ...rest } = options
   const session = getSession()
@@ -69,17 +83,18 @@ export async function request(path, options = {}) {
   }
 
   if (!response.ok) {
-    let message = `Błąd serwera (${response.status})`
+    let detail = null
     try {
       const body = await response.json()
-      const fromDetail = formatDetail(body.detail)
-      if (fromDetail) {
-        message = fromDetail
-      }
+      detail = body.detail
     } catch {
       // Odpowiedź bez JSON, zostaje komunikat ze statusem
     }
-    throw new Error(message)
+    const error = new Error(formatDetail(detail) ?? `Błąd serwera (${response.status})`)
+    // Status pozwala odróżnić np. 409 (zajęty e-mail) od 401 (złe hasło)
+    error.status = response.status
+    error.fields = formatFieldErrors(detail)
+    throw error
   }
 
   if (response.status === 204) {
@@ -102,4 +117,23 @@ export function getTopMonth() {
 
 export function getBar(barId) {
   return request(`/bars/${barId}`)
+}
+
+// Rejestracja i logowanie zwracają { access_token, token_type, user }, czyli gotową sesję
+export function register(email, password, displayName) {
+  return request('/auth/register', {
+    method: 'POST',
+    body: JSON.stringify({ email, password, display_name: displayName }),
+  })
+}
+
+export function login(email, password) {
+  return request('/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ email, password }),
+  })
+}
+
+export function getMe() {
+  return request('/auth/me')
 }
