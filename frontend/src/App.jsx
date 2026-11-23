@@ -11,6 +11,8 @@ function App() {
   const [topOpen, setTopOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
   const [favoriteIds, setFavoriteIds] = useState([])
+  // Stan w App, bo okienko baru otwiera zarówno marker na mapie, jak i pozycja na liście.
+  const [selectedBarId, setSelectedBarId] = useState(null)
   const [accountOpen, setAccountOpen] = useState(false)
   // Sesja z localStorage, żeby po odświeżeniu strony użytkownik był dalej zalogowany
   const [user, setUser] = useState(() => getSession()?.user ?? null)
@@ -97,6 +99,8 @@ function App() {
         topOpen={topOpen}
         listOpen={listOpen}
         barsVersion={barsVersion}
+        selectedBarId={selectedBarId}
+        onSelectBar={setSelectedBarId}
         onOpenTop={() => setTopOpen(true)}
         onOpenList={() => setListOpen(true)}
       />
@@ -123,6 +127,7 @@ function App() {
         barsVersion={barsVersion}
         favoriteIds={favoriteIds}
         onToggleFavorite={toggleFavorite}
+        onSelectBar={setSelectedBarId}
         onClose={() => setListOpen(false)}
         onSwitchToTop={() => {
           setListOpen(false)

@@ -107,6 +107,126 @@
   filter: url(#sketch);
 }
 
+.bar-popup {
+  position: absolute;
+  left: 50%;
+  bottom: 1rem;
+  /* Nad panelami bocznymi, bo na wąskim ekranie lista zasłania całą mapę. */
+  z-index: 11;
+  width: min(calc(100% - var(--panel-gap) * 2), 22rem);
+  padding: 0.8rem 1rem 1rem;
+  transform: translateX(-50%);
+  border: 2.5px solid var(--ink-oak);
+  border-radius: 22px 28px 20px 26px / 26px 20px 28px 22px;
+  background: var(--bg-foam);
+  box-shadow: 3px 3px 0 var(--ink-oak);
+  filter: url(#sketch);
+}
+
+.bar-popup-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.6rem;
+}
+
+.bar-popup-header h2 {
+  flex: 1;
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 1.6rem;
+  font-weight: 400;
+  line-height: 1.15;
+}
+
+.bar-popup-close {
+  width: 2rem;
+  height: 2rem;
+  flex-shrink: 0;
+  padding: 0;
+  border: 2px solid var(--ink-oak);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  background: var(--bg-foam);
+  color: var(--ink-oak);
+  font-size: 1.3rem;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.bar-popup-close:hover {
+  background: var(--bg-coaster);
+}
+
+.bar-popup-status,
+.bar-popup-error {
+  margin: 0.6rem 0 0;
+}
+
+.bar-popup-error {
+  color: var(--accent-brick);
+}
+
+.bar-popup-rating {
+  display: flex;
+  align-items: baseline;
+  gap: 0.6rem;
+  margin: 0.5rem 0 0;
+}
+
+.bar-popup-rating-value {
+  font-family: var(--font-hand);
+  font-size: 1.55rem;
+}
+
+.bar-popup-rating-count {
+  font-size: 0.9rem;
+}
+
+.bar-popup-prices-title {
+  margin: 0.8rem 0 0.35rem;
+  font-size: 1rem;
+}
+
+.bar-popup-no-prices {
+  margin: 0;
+}
+
+/* Przy wielu napojach przewija się sama lista, a okienko nie zasłania całej mapy. */
+.bar-popup-prices {
+  max-height: 12rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  overflow-y: auto;
+}
+
+.bar-popup-prices li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.2rem 0.6rem;
+}
+
+.bar-popup-drink {
+  flex: 1;
+}
+
+.bar-popup-amount {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bar-popup-verify {
+  padding: 0.05rem 0.5rem;
+  border: 2px solid var(--accent-brick);
+  border-radius: 999px;
+  color: var(--accent-brick);
+  font-size: 0.8rem;
+  white-space: nowrap;
+}
+
 .edge-button {
   position: absolute;
   /* Taki sam offset jak przyciski strzałek w nagłówkach paneli. */
@@ -570,6 +690,30 @@
   color: var(--accent-brick);
 }
 
+.list-sort {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+}
+
+.list-sort button {
+  flex: 1;
+  padding: 0.3rem 0.8rem;
+  border: 2.5px solid var(--ink-oak);
+  border-radius: 22px 18px 24px 16px / 16px 24px 14px 22px;
+  background: var(--bg-foam);
+  color: var(--ink-oak);
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--ink-oak);
+}
+
+.list-sort button[aria-pressed='true'] {
+  background: var(--bg-coaster);
+}
+
 .bar-list {
   flex: 1;
   min-height: 0;
@@ -584,10 +728,34 @@
   overflow-x: hidden;
 }
 
+.bar-list-section {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.bar-list-heading {
+  margin: 0.4rem 0 0;
+  font-family: var(--font-hand);
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+
 .bar-list li {
   display: flex;
   align-items: center;
   gap: 0.55rem;
+}
+
+.bar-rank {
+  min-width: 1.8rem;
+  flex-shrink: 0;
+  text-align: right;
+  font-family: var(--font-hand);
+  font-size: 1.3rem;
 }
 
 .favorite-star {
@@ -622,6 +790,9 @@
   border-radius: 22px 18px 24px 16px / 16px 24px 14px 22px;
   font-family: var(--font-hand);
   font-size: 1.2rem;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
   background: var(--bg-foam);
   box-shadow: 2px 2px 0px var(--ink-oak);
   transition:
