@@ -158,6 +158,11 @@ export function removeFavorite(barId) {
   return request(`/bars/${barId}/favorite`, { method: 'DELETE' })
 }
 
+// Aktywne napoje do wyboru w formularzu zgłoszenia ceny
+export function getDrinks() {
+  return request('/drinks')
+}
+
 // T2: zwraca zapisaną cenę w tym samym formacie co lista cen baru
 export function reportPrice(barId, drinkId, amount) {
   return request(`/bars/${barId}/prices`, {

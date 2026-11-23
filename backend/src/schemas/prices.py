@@ -1,4 +1,4 @@
-# Modele danych dla zgłoszenia ceny (T2, PU.02), potwierdzenia ceny (T3, PU.03) i aktualnych cen baru.
+# Modele danych dla zgłoszenia ceny (T2, PU.02), potwierdzenia ceny (T3, PU.03), aktualnych cen baru i listy napojów.
 from datetime import datetime
 from decimal import Decimal
 from typing import Literal
@@ -17,6 +17,14 @@ class PriceReportRequest(BaseModel):
 class PriceConfirmRequest(BaseModel):
     # PU.03: confirm – cena się zgadza, change – cena jest inna (te same wartości co CHECK w price_confirmations)
     kind: Literal["confirm", "change"] = "confirm"
+
+
+class DrinkResponse(BaseModel):
+    # Bez is_active, bo lista zawiera tylko aktywne napoje
+    id: int
+    name: str
+    category: str
+    volume_ml: int
 
 
 class PriceResponse(BaseModel):

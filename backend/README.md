@@ -118,6 +118,7 @@ Konta z danych testowych mają tylko zastępczy hash hasła, więc nie da się n
 | `GET /nearby?lat=&lon=&radius_m=` | bary w pobliżu | wszyscy |
 | `GET /ranking` | ranking według oceny ważonej | wszyscy |
 | `GET /top-month` | top 3 miesiąca | wszyscy |
+| `GET /drinks` | aktywne napoje (wybór w formularzu ceny) | wszyscy |
 | `GET /bars/{bar_id}/prices` | aktualne ceny baru | wszyscy |
 | `POST /bars/{bar_id}/prices` | zgłoszenie ceny | zalogowany |
 | `POST /prices/{price_id}/confirmations` | potwierdzenie ceny | zalogowany |

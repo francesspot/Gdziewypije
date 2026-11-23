@@ -1,4 +1,4 @@
-# Testy cen: zgłoszenie ceny (T2, PU.02), potwierdzenie ceny (T3, PU.03) i aktualne ceny baru.
+# Testy cen: lista napojów, zgłoszenie ceny (T2, PU.02), potwierdzenie ceny (T3, PU.03) i aktualne ceny baru.
 # Wymagają działającej bazy (docker compose up -d) i pliku backend/.env.
 # Bar, napój i konta są tworzone w fixturach, więc testy nie zależą od danych z 03_testdata.sql.
 import uuid
@@ -164,6 +164,26 @@ def test_report_price_without_token_returns_401(client, bar, drink):
 
     assert response.status_code == 401
     assert price_count(bar) == 0
+
+
+def test_drinks_list_contains_active_drink_without_login(client, drink):
+    response = client.get("/drinks")
+
+    assert response.status_code == 200
+    listed = next(item for item in response.json() if item["id"] == drink)
+    assert listed["category"] == "beer"
+    assert listed["volume_ml"] == 500
+    assert "is_active" not in listed
+
+
+def test_drinks_list_skips_disabled_drink(client, drink):
+    with connect() as conn:
+        conn.execute("UPDATE drinks SET is_active = false WHERE id = %s", (drink,))
+
+    response = client.get("/drinks")
+
+    assert response.status_code == 200
+    assert drink not in [item["id"] for item in response.json()]
 
 
 def test_current_prices_of_bar_without_prices_is_empty(client, bar):
