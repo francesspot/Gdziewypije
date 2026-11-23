@@ -9,7 +9,7 @@ function compareDrinks(a, b) {
 }
 
 // Zakładka napojów w panelu administratora: wszystkie napoje, także wyłączone, z dodawaniem, edycją i wyłączaniem
-function AdminDrinks() {
+function AdminDrinks({ onChanged }) {
   const [drinks, setDrinks] = useState([])
   // null: widać listę, 'new': formularz nowego napoju, obiekt napoju: formularz edycji tego napoju
   const [editing, setEditing] = useState(null)
@@ -49,6 +49,7 @@ function AdminDrinks() {
     try {
       const updated = await setDrinkActive(drink.id, !drink.is_active)
       setDrinks((current) => current.map((item) => (item.id === updated.id ? updated : item)))
+      onChanged()
     } catch (err) {
       setError(err.message)
     } finally {
@@ -59,6 +60,7 @@ function AdminDrinks() {
   function handleSaved(saved) {
     // Zapisany napój zastępuje starą wersję albo dochodzi jako nowy, a lista zostaje posortowana
     setDrinks((current) => [...current.filter((item) => item.id !== saved.id), saved].sort(compareDrinks))
+    onChanged()
     setEditing(null)
   }
 

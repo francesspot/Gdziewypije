@@ -8,7 +8,7 @@ function compareBars(a, b) {
 }
 
 // Zakładka barów w panelu administratora: wszystkie bary, także wyłączone, z dodawaniem, edycją i wyłączaniem
-function AdminBars() {
+function AdminBars({ onChanged }) {
   const [bars, setBars] = useState([])
   // null: widać listę, 'new': formularz nowego baru, obiekt baru: formularz edycji tego baru
   const [editing, setEditing] = useState(null)
@@ -51,6 +51,7 @@ function AdminBars() {
     try {
       const updated = await setBarActive(bar.id, !bar.is_active)
       setBars((current) => current.map((item) => (item.id === updated.id ? updated : item)))
+      onChanged()
     } catch (err) {
       setError(err.message)
     } finally {
@@ -61,6 +62,7 @@ function AdminBars() {
   function handleSaved(saved) {
     // Zapisany bar zastępuje starą wersję albo dochodzi jako nowy, a lista zostaje posortowana
     setBars((current) => [...current.filter((item) => item.id !== saved.id), saved].sort(compareBars))
+    onChanged()
     setEditing(null)
   }
 
