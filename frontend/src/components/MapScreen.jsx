@@ -102,6 +102,7 @@ function MapScreen({
   onSelectBar,
   onToggleFavorite,
   onRate,
+  onConfirmPrice,
   onRequireLogin,
   onOpenTop,
   onOpenList,
@@ -264,6 +265,7 @@ function MapScreen({
           barsVersion={barsVersion}
           onToggleFavorite={onToggleFavorite}
           onRate={onRate}
+          onConfirmPrice={onConfirmPrice}
           onClose={() => onSelectBar(null)}
         />
       ) : null}

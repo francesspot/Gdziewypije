@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react'
 import {
   addFavorite,
   clearSession,
+  confirmPrice,
   getFavorites,
   getMe,
   getSession,
@@ -169,6 +170,26 @@ function App() {
     return true
   }
 
+  // Zwraca false, gdy trzeba się zalogować; inne błędy (np. 409 przy drugim potwierdzeniu) pokazuje okienko baru
+  async function handleConfirmPrice(priceId, kind) {
+    if (!user) {
+      setAccountOpen(true)
+      return false
+    }
+    try {
+      await confirmPrice(priceId, kind)
+    } catch (err) {
+      if (err.status === 401) {
+        handleUnauthorized()
+        return false
+      }
+      throw err
+    }
+    // Potwierdzenie zmienia datę ceny, więc okienko pobiera ceny od nowa i etykieta „do weryfikacji” znika
+    setBarsVersion((version) => version + 1)
+    return true
+  }
+
   return (
     <div
       className={[
@@ -195,6 +216,7 @@ function App() {
         onSelectBar={setSelectedBarId}
         onToggleFavorite={toggleFavorite}
         onRate={handleRate}
+        onConfirmPrice={handleConfirmPrice}
         onRequireLogin={() => setAccountOpen(true)}
         onOpenTop={() => setTopOpen(true)}
         onOpenList={() => setListOpen(true)}

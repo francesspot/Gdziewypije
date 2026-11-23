@@ -282,6 +282,37 @@
   white-space: nowrap;
 }
 
+/* Przyciski w osobnej linii pod ceną, żeby na wąskim ekranie nie ściskały nazwy napoju */
+.bar-popup-confirm {
+  display: flex;
+  flex-basis: 100%;
+  gap: 0.4rem;
+}
+
+.bar-popup-confirm button {
+  padding: 0.1rem 0.6rem;
+  border: 2px solid var(--ink-oak);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  background: var(--bg-foam);
+  color: var(--ink-oak);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.bar-popup-confirm button:hover {
+  background: var(--bg-coaster);
+}
+
+.bar-popup-confirm button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.bar-popup-message {
+  margin: 0.6rem 0 0;
+}
+
 .edge-button {
   position: absolute;
   /* Taki sam offset jak przyciski strzałek w nagłówkach paneli. */

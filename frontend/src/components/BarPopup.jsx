@@ -15,7 +15,12 @@ function formatPrice(amount) {
 }
 
 // Komponent dostaje key={barId}, więc wybór innego baru montuje go od nowa ze stanem ładowania.
-function BarPopup({ barId, isFavorite, barsVersion, onToggleFavorite, onRate, onClose }) {
+const CONFIRM_MESSAGES = {
+  confirm: 'Cena potwierdzona (+1 pkt)',
+  change: 'Zapisano zgłoszenie zmiany ceny',
+}
+
+function BarPopup({ barId, isFavorite, barsVersion, onToggleFavorite, onRate, onConfirmPrice, onClose }) {
   const [bar, setBar] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
@@ -23,6 +28,10 @@ function BarPopup({ barId, isFavorite, barsVersion, onToggleFavorite, onRate, on
   const [myRating, setMyRating] = useState(null)
   const [ratingSaving, setRatingSaving] = useState(false)
   const [ratingError, setRatingError] = useState('')
+  // Id ceny w trakcie zapisu; blokuje jej przyciski, żeby dwa kliknięcia nie wysłały dwóch potwierdzeń
+  const [confirmingPriceId, setConfirmingPriceId] = useState(null)
+  const [confirmMessage, setConfirmMessage] = useState('')
+  const [confirmError, setConfirmError] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -76,6 +85,22 @@ function BarPopup({ barId, isFavorite, barsVersion, onToggleFavorite, onRate, on
       setRatingError(err.message)
     } finally {
       setRatingSaving(false)
+    }
+  }
+
+  async function handleConfirmPrice(priceId, kind) {
+    setConfirmingPriceId(priceId)
+    setConfirmMessage('')
+    setConfirmError('')
+    try {
+      if (await onConfirmPrice(priceId, kind)) {
+        setConfirmMessage(CONFIRM_MESSAGES[kind])
+      }
+    } catch (err) {
+      // 409 ma gotowy komunikat z backendu: „Ta cena została już potwierdzona z tego konta”
+      setConfirmError(err.message)
+    } finally {
+      setConfirmingPriceId(null)
     }
   }
 
@@ -139,10 +164,39 @@ function BarPopup({ barId, isFavorite, barsVersion, onToggleFavorite, onRate, on
                   {price.needs_verification ? (
                     <span className="bar-popup-verify">do weryfikacji</span>
                   ) : null}
+                  {/* PU.03: „zgadza się” odświeża datę ceny, „zmiana” zgłasza, że cena jest inna */}
+                  <span className="bar-popup-confirm">
+                    <button
+                      type="button"
+                      disabled={confirmingPriceId === price.price_id}
+                      onClick={() => handleConfirmPrice(price.price_id, 'confirm')}
+                      aria-label={`Cena ${price.drink_name} ${price.volume_ml} ml zgadza się`}
+                    >
+                      zgadza się
+                    </button>
+                    <button
+                      type="button"
+                      disabled={confirmingPriceId === price.price_id}
+                      onClick={() => handleConfirmPrice(price.price_id, 'change')}
+                      aria-label={`Cena ${price.drink_name} ${price.volume_ml} ml jest inna`}
+                    >
+                      zmiana
+                    </button>
+                  </span>
                 </li>
               ))}
             </ul>
           )}
+          {confirmMessage ? (
+            <p className="bar-popup-message" role="status">
+              {confirmMessage}
+            </p>
+          ) : null}
+          {confirmError ? (
+            <p className="bar-popup-error" role="alert">
+              {confirmError}
+            </p>
+          ) : null}
         </>
       ) : null}
     </section>
