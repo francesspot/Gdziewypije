@@ -5,6 +5,7 @@ import {
   getFavorites,
   getMe,
   getSession,
+  rateBar,
   removeFavorite,
   setSession,
 } from './api'
@@ -24,6 +25,8 @@ function App() {
   // Sesja z localStorage, żeby po odświeżeniu strony użytkownik był dalej zalogowany
   const [user, setUser] = useState(() => getSession()?.user ?? null)
   const [favoriteError, setFavoriteError] = useState('')
+  // Zwiększenie licznika każe mapie, liście, TOP i okienku baru pobrać dane od nowa
+  const [barsVersion, setBarsVersion] = useState(0)
   // Samo id w zależnościach, bo odświeżenie danych konta (getMe) daje nowy obiekt tego samego użytkownika
   const userId = user?.id ?? null
 
@@ -142,6 +145,28 @@ function App() {
     setFavoriteIds((current) =>
       isFavorite ? current.filter((id) => id !== barId) : [...current, barId],
     )
+    // Ulubione z bieżącego miesiąca liczą się do TOP (v_top_month)
+    setBarsVersion((version) => version + 1)
+  }
+
+  // Zwraca false, gdy ocena nie została zapisana, bo trzeba się zalogować; inne błędy pokazuje okienko baru
+  async function handleRate(barId, value) {
+    if (!user) {
+      setAccountOpen(true)
+      return false
+    }
+    try {
+      await rateBar(barId, value)
+    } catch (err) {
+      if (err.status === 401) {
+        handleUnauthorized()
+        return false
+      }
+      throw err
+    }
+    // Średnią liczy baza (v_bar_stats), więc nowa wartość wymaga ponownego pobrania barów
+    setBarsVersion((version) => version + 1)
+    return true
   }
 
   return (
@@ -164,7 +189,11 @@ function App() {
         topOpen={topOpen}
         listOpen={listOpen}
         selectedBarId={selectedBarId}
+        favoriteIds={favoriteIds}
+        barsVersion={barsVersion}
         onSelectBar={setSelectedBarId}
+        onToggleFavorite={toggleFavorite}
+        onRate={handleRate}
         onOpenTop={() => setTopOpen(true)}
         onOpenList={() => setListOpen(true)}
       />
@@ -185,6 +214,7 @@ function App() {
       ) : null}
       <TopPanel
         open={topOpen}
+        barsVersion={barsVersion}
         onClose={() => setTopOpen(false)}
         onSwitchToList={() => {
           setTopOpen(false)
@@ -193,6 +223,7 @@ function App() {
       />
       <ListPanel
         open={listOpen}
+        barsVersion={barsVersion}
         favoriteIds={favoriteIds}
         onToggleFavorite={toggleFavorite}
         onSelectBar={setSelectedBarId}

@@ -187,6 +187,49 @@
   font-size: 0.9rem;
 }
 
+.bar-popup-your-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0.4rem 0 0;
+  font-size: 0.9rem;
+}
+
+.rating-stars {
+  display: flex;
+  gap: 0.15rem;
+}
+
+.rating-star {
+  width: 1.7rem;
+  height: 1.7rem;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  line-height: 0;
+  cursor: pointer;
+}
+
+/* Wyłączone na czas zapisu, żeby dwa kliknięcia nie wysłały dwóch ocen naraz */
+.rating-star:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.rating-star svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.rating-star path {
+  fill: var(--bg-foam);
+}
+
+.rating-star.is-on path {
+  fill: var(--accent-beer);
+}
+
 .bar-popup-prices-title {
   margin: 0.8rem 0 0.35rem;
   font-size: 1rem;
