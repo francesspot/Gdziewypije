@@ -191,9 +191,11 @@ function App() {
         selectedBarId={selectedBarId}
         favoriteIds={favoriteIds}
         barsVersion={barsVersion}
+        loggedIn={user != null}
         onSelectBar={setSelectedBarId}
         onToggleFavorite={toggleFavorite}
         onRate={handleRate}
+        onRequireLogin={() => setAccountOpen(true)}
         onOpenTop={() => setTopOpen(true)}
         onOpenList={() => setListOpen(true)}
       />

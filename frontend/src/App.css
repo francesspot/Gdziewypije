@@ -87,7 +87,8 @@
 }
 
 .map-fetch-error,
-.favorite-error {
+.favorite-error,
+.map-status {
   position: absolute;
   top: calc(var(--panel-gap) + 1rem + 3.25rem);
   left: 50%;
@@ -106,6 +107,11 @@
   pointer-events: none;
   box-shadow: 2px 2px 0 var(--ink-oak);
   filter: url(#sketch);
+}
+
+/* Informacja, a nie błąd, więc bez czerwonego koloru */
+.map-status {
+  color: var(--ink-oak);
 }
 
 /* Nad panelami i okienkiem baru, bo gwiazdka ulubionych jest na liście */
@@ -410,6 +416,28 @@
 
 .map-mode-toggle-btn[aria-pressed='true'] .map-mode-toggle-dollar {
   color: #1f8a4c;
+}
+
+.map-controls .map-favorites svg {
+  width: 1.3rem;
+  height: 1.3rem;
+  display: block;
+  margin: 0 auto;
+}
+
+.map-favorites path {
+  fill: none;
+  stroke: var(--bg-foam);
+}
+
+/* Włączony filtr wygląda jak zapalona gwiazdka ulubionych */
+.map-controls .map-favorites[aria-pressed='true'] {
+  background: var(--bg-foam);
+}
+
+.map-favorites[aria-pressed='true'] path {
+  fill: var(--accent-beer);
+  stroke: var(--ink-oak);
 }
 
 .map-controls .map-locate svg {

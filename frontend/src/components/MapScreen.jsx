@@ -98,9 +98,11 @@ function MapScreen({
   selectedBarId,
   favoriteIds,
   barsVersion,
+  loggedIn,
   onSelectBar,
   onToggleFavorite,
   onRate,
+  onRequireLogin,
   onOpenTop,
   onOpenList,
 }) {
@@ -113,6 +115,11 @@ function MapScreen({
   const [bars, setBars] = useState([])
   const [mode, setMode] = useState('rating')
   const [fetchError, setFetchError] = useState('')
+  const [onlyFavorites, setOnlyFavorites] = useState(false)
+  // Po wylogowaniu filtr nie działa, żeby mapa nie została pusta; po ponownym zalogowaniu wraca
+  const showOnlyFavorites = onlyFavorites && loggedIn
+  const noFavoritesVisible =
+    showOnlyFavorites && bars.length > 0 && !bars.some((bar) => favoriteIds.includes(bar.id))
 
   useEffect(() => {
     if (!mapContainerRef.current) {
@@ -202,7 +209,12 @@ function MapScreen({
     const layer = L.layerGroup()
     const boundsPoints = []
 
-    for (const bar of bars) {
+    // Filtr „tylko ulubione” (HU.08) ukrywa pozostałe markery, ale nie zmienia pobranej listy barów
+    const visibleBars = showOnlyFavorites
+      ? bars.filter((bar) => favoriteIds.includes(bar.id))
+      : bars
+
+    for (const bar of visibleBars) {
       const point = [bar.latitude, bar.longitude]
       // title daje podpowiedź po najechaniu.
       L.marker(point, { icon: createBarMarkerIcon(mode, bar), title: bar.name })
@@ -229,13 +241,18 @@ function MapScreen({
         markersLayerRef.current = null
       }
     }
-  }, [bars, mode, mapReady, onSelectBar])
+  }, [bars, mode, mapReady, onSelectBar, showOnlyFavorites, favoriteIds])
 
   return (
     <section className="map-screen" aria-label="Mapa">
       {fetchError ? (
         <p className="map-fetch-error" role="alert">
           {fetchError}
+        </p>
+      ) : null}
+      {noFavoritesVisible ? (
+        <p className="map-status" role="status">
+          Brak ulubionych barów
         </p>
       ) : null}
       <div className="map-canvas" ref={mapContainerRef} />
@@ -299,6 +316,24 @@ function MapScreen({
             </svg>
           </button>
         </div>
+        <button
+          className="map-favorites"
+          type="button"
+          aria-pressed={showOnlyFavorites}
+          aria-label="Pokaż tylko ulubione"
+          title="Tylko ulubione"
+          // Ulubione ma tylko zalogowany użytkownik, więc gość trafia do logowania
+          onClick={() => (loggedIn ? setOnlyFavorites((current) => !current) : onRequireLogin())}
+        >
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M12 3.2 14.6 8.8 20.8 9.4 16.2 13.6 17.6 19.8 12 16.8 6.4 19.8 7.8 13.6 3.2 9.4 9.4 8.8 Z"
+              strokeWidth="2.5"
+              strokeLinejoin="round"
+              strokeLinecap="round"
+            />
+          </svg>
+        </button>
         <button type="button" aria-label="Przybliż" onClick={() => mapRef.current?.zoomIn()}>
           +
         </button>
