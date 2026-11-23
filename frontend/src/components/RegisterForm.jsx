@@ -85,7 +85,7 @@ function RegisterForm({ onLoggedIn }) {
       />
       <FormField
         id="register-display-name"
-        label="Nazwa wyświetlana"
+        label="Nazwa użytkownika"
         type="text"
         autoComplete="nickname"
         value={displayName}
