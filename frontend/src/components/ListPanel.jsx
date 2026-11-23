@@ -6,7 +6,7 @@ function formatRating(avgRating) {
   return avgRating == null ? '–' : avgRating.toFixed(1)
 }
 
-function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop }) {
+function ListPanel({ open, favoriteIds, onToggleFavorite, onSelectBar, onClose, onSwitchToTop }) {
   const [query, setQuery] = useState('')
   const [bars, setBars] = useState([])
   const [error, setError] = useState('')
@@ -123,7 +123,9 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onClose, onSwitchToTop
                   />
                 </svg>
               </button>
-              <span className="bar-name">{bar.name}</span>
+              <button className="bar-name" type="button" onClick={() => onSelectBar(bar.id)}>
+                {bar.name}
+              </button>
               <span className="rating">{formatRating(bar.avg_rating)}</span>
             </li>
           )

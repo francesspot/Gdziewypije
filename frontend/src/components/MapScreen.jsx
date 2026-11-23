@@ -92,7 +92,7 @@ function createBarMarkerIcon(mode, bar) {
   })
 }
 
-function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
+function MapScreen({ topOpen, listOpen, selectedBarId, onSelectBar, onOpenTop, onOpenList }) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
   const markersLayerRef = useRef(null)
@@ -102,7 +102,6 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
   const [bars, setBars] = useState([])
   const [mode, setMode] = useState('rating')
   const [fetchError, setFetchError] = useState('')
-  const [selectedBarId, setSelectedBarId] = useState(null)
 
   useEffect(() => {
     if (!mapContainerRef.current) {
@@ -129,11 +128,6 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
       userMovedMapRef.current = true
     })
 
-    // Kliknięcie markera nie dociera do mapy (bubblingMouseEvents: false), więc to tylko klik w puste miejsce.
-    map.on('click', () => {
-      setSelectedBarId(null)
-    })
-
     mapRef.current = map
     setMapReady(true)
 
@@ -143,6 +137,23 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
       setMapReady(false)
     }
   }, [])
+
+  useEffect(() => {
+    if (!mapReady) {
+      return
+    }
+    const map = mapRef.current
+
+    // Kliknięcie markera nie dociera do mapy (bubblingMouseEvents: false), więc to tylko klik w puste miejsce.
+    function handleMapClick() {
+      onSelectBar(null)
+    }
+
+    map.on('click', handleMapClick)
+    return () => {
+      map.off('click', handleMapClick)
+    }
+  }, [mapReady, onSelectBar])
 
   useEffect(() => {
     let cancelled = false
@@ -184,7 +195,7 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
       const point = [bar.latitude, bar.longitude]
       // title daje podpowiedź po najechaniu.
       L.marker(point, { icon: createBarMarkerIcon(mode, bar), title: bar.name })
-        .on('click', () => setSelectedBarId(bar.id))
+        .on('click', () => onSelectBar(bar.id))
         .addTo(layer)
       boundsPoints.push(point)
     }
@@ -207,7 +218,7 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
         markersLayerRef.current = null
       }
     }
-  }, [bars, mode, mapReady])
+  }, [bars, mode, mapReady, onSelectBar])
 
   return (
     <section className="map-screen" aria-label="Mapa">
@@ -221,7 +232,7 @@ function MapScreen({ topOpen, listOpen, onOpenTop, onOpenList }) {
         <BarPopup
           key={selectedBarId}
           barId={selectedBarId}
-          onClose={() => setSelectedBarId(null)}
+          onClose={() => onSelectBar(null)}
         />
       ) : null}
       {!topOpen ? (
