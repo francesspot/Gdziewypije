@@ -88,6 +88,10 @@ export async function request(path, options = {}) {
   return response.json()
 }
 
+export function getRanking() {
+  return request('/ranking')
+}
+
 export function getBars() {
   return request('/bars')
 }

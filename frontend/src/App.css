@@ -691,6 +691,30 @@
   color: var(--accent-brick);
 }
 
+.list-sort {
+  display: flex;
+  flex-shrink: 0;
+  gap: 0.6rem;
+  margin: 0 0 1rem;
+}
+
+.list-sort button {
+  flex: 1;
+  padding: 0.3rem 0.8rem;
+  border: 2.5px solid var(--ink-oak);
+  border-radius: 22px 18px 24px 16px / 16px 24px 14px 22px;
+  background: var(--bg-foam);
+  color: var(--ink-oak);
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  cursor: pointer;
+  box-shadow: 2px 2px 0px var(--ink-oak);
+}
+
+.list-sort button[aria-pressed='true'] {
+  background: var(--bg-coaster);
+}
+
 .bar-list {
   flex: 1;
   min-height: 0;
@@ -705,10 +729,34 @@
   overflow-x: hidden;
 }
 
+.bar-list-section {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.85rem;
+}
+
+.bar-list-heading {
+  margin: 0.4rem 0 0;
+  font-family: var(--font-hand);
+  font-size: 1.5rem;
+  font-weight: 400;
+}
+
 .bar-list li {
   display: flex;
   align-items: center;
   gap: 0.55rem;
+}
+
+.bar-rank {
+  min-width: 1.8rem;
+  flex-shrink: 0;
+  text-align: right;
+  font-family: var(--font-hand);
+  font-size: 1.3rem;
 }
 
 .favorite-star {
