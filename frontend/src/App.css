@@ -942,16 +942,19 @@
   font-weight: 600;
 }
 
-.form-field input {
+.form-field input,
+.form-field select {
   padding: 0.55rem 0.75rem;
   border: 2.5px solid var(--ink-oak);
   border-radius: 14px 18px 12px 16px / 16px 12px 18px 14px;
   background: var(--bg-foam);
   color: var(--ink-oak);
+  font-family: inherit;
   font-size: 1rem;
 }
 
-.form-field input[aria-invalid='true'] {
+.form-field input[aria-invalid='true'],
+.form-field select[aria-invalid='true'] {
   border-color: var(--accent-brick);
 }
 
@@ -976,6 +979,125 @@
 .account-logout {
   width: 100%;
   background: var(--bg-foam);
+}
+
+.account-admin {
+  width: 100%;
+  margin-bottom: 0.8rem;
+}
+
+/* Panel administratora mieści listy barów i formularze, więc jest szerszy niż okno konta */
+.admin-panel {
+  width: min(100%, 40rem);
+}
+
+.admin-section {
+  margin-top: 1rem;
+}
+
+.admin-toolbar {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+/* Odstęp nad i pod wyszukiwarką daje .admin-section i .admin-toolbar, tak samo w obu zakładkach */
+.admin-toolbar .search {
+  flex: 1;
+  margin: 0;
+}
+
+.admin-toolbar .account-submit {
+  flex-shrink: 0;
+}
+
+.admin-form-title {
+  margin: 0;
+  font-family: var(--font-hand);
+  font-size: 1.6rem;
+  font-weight: 400;
+}
+
+/* Szerokość i długość geograficzna obok siebie, a na wąskim ekranie jedna pod drugą */
+.admin-form-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.9rem;
+}
+
+.admin-form-buttons {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.admin-form-buttons .account-submit {
+  flex: 1;
+}
+
+.admin-cancel {
+  background: var(--bg-foam);
+}
+
+.admin-list {
+  /* Przewija się sama lista, a wyszukiwarka zostaje na górze */
+  max-height: 50vh;
+  margin: 0;
+  padding: 0 0.15rem 0 0;
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  overflow-y: auto;
+}
+
+.admin-row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.4rem 0.6rem;
+  border: 2px solid var(--ink-oak);
+  border-radius: 14px 18px 12px 16px / 16px 12px 18px 14px;
+  background: var(--bg-foam);
+}
+
+.admin-row.is-inactive {
+  background: var(--bg-coaster);
+}
+
+.admin-row-text {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.admin-row-name {
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-row-meta {
+  font-size: 0.85rem;
+  overflow-wrap: anywhere;
+}
+
+.admin-action {
+  flex-shrink: 0;
+  padding: 0.3rem 0.7rem;
+  border: 2px solid var(--ink-oak);
+  border-radius: 999px;
+  background: var(--bg-foam);
+  color: var(--ink-oak);
+  font-size: 0.95rem;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ink-oak);
+}
+
+.admin-action:disabled {
+  opacity: 0.6;
+  cursor: wait;
 }
 
 .account-submit:disabled {

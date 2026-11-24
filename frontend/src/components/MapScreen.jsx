@@ -92,7 +92,15 @@ function createBarMarkerIcon(mode, bar) {
   })
 }
 
-function MapScreen({ topOpen, listOpen, selectedBarId, onSelectBar, onOpenTop, onOpenList }) {
+function MapScreen({
+  topOpen,
+  listOpen,
+  barsVersion,
+  selectedBarId,
+  onSelectBar,
+  onOpenTop,
+  onOpenList,
+}) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
   const markersLayerRef = useRef(null)
@@ -176,7 +184,8 @@ function MapScreen({ topOpen, listOpen, selectedBarId, onSelectBar, onOpenTop, o
     return () => {
       cancelled = true
     }
-  }, [])
+    // Zmiana barsVersion po zapisie w panelu administratora pobiera bary od nowa
+  }, [barsVersion])
 
   useEffect(() => {
     if (!mapReady) {

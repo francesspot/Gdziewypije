@@ -38,7 +38,15 @@ function BarListItem({ bar, isFavorite, onToggleFavorite, onSelectBar }) {
   )
 }
 
-function ListPanel({ open, favoriteIds, onToggleFavorite, onSelectBar, onClose, onSwitchToTop }) {
+function ListPanel({
+  open,
+  barsVersion,
+  favoriteIds,
+  onToggleFavorite,
+  onSelectBar,
+  onClose,
+  onSwitchToTop,
+}) {
   const [query, setQuery] = useState('')
   const [sortOrder, setSortOrder] = useState('best')
   const [rankedBars, setRankedBars] = useState([])
@@ -82,7 +90,8 @@ function ListPanel({ open, favoriteIds, onToggleFavorite, onSelectBar, onClose, 
     return () => {
       cancelled = true
     }
-  }, [])
+    // Zmiana barsVersion po zapisie w panelu administratora pobiera bary od nowa
+  }, [barsVersion])
 
   return (
     <aside
