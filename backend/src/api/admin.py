@@ -19,6 +19,20 @@ BAR_COLUMNS = """
 """
 
 
+@router.get(
+    "/bars",
+    response_model=list[BarResponse],
+    summary="Lista wszystkich barów",
+    description=(
+        "Zwraca wszystkie bary razem z wyłączonymi, posortowane po nazwie. "
+        "Wymaga konta administratora."
+    ),
+)
+def list_all_bars(conn: psycopg.Connection = Depends(get_connection)) -> list[dict]:
+    # Odczyt z tabeli, a nie z v_bar_stats, bo panel musi pokazać też wyłączone bary, żeby dało się je włączyć
+    return conn.execute(f"SELECT {BAR_COLUMNS} FROM bars ORDER BY name, id").fetchall()
+
+
 @router.post(
     "/bars",
     status_code=201,
@@ -86,6 +100,20 @@ DRINK_COLUMNS = "id, name, category, volume_ml, is_active"
 
 # UNIQUE (name, volume_ml) w drinks: ten sam napój może mieć kilka pojemności, ale nie dwa razy tę samą
 DUPLICATE_DRINK = "Napój o tej nazwie i pojemności już istnieje"
+
+
+@router.get(
+    "/drinks",
+    response_model=list[DrinkResponse],
+    summary="Lista wszystkich napojów",
+    description=(
+        "Zwraca wszystkie napoje razem z wyłączonymi, posortowane po nazwie i pojemności. "
+        "Wymaga konta administratora."
+    ),
+)
+def list_all_drinks(conn: psycopg.Connection = Depends(get_connection)) -> list[dict]:
+    # Wyłączone napoje też są na liście, żeby panel mógł je włączyć z powrotem
+    return conn.execute(f"SELECT {DRINK_COLUMNS} FROM drinks ORDER BY name, volume_ml, id").fetchall()
 
 
 @router.post(

@@ -125,7 +125,9 @@ Konta z danych testowych mają tylko zastępczy hash hasła, więc nie da się n
 | `POST /bars/{bar_id}/favorite` | dodanie do ulubionych | zalogowany |
 | `DELETE /bars/{bar_id}/favorite` | usunięcie z ulubionych | zalogowany |
 | `GET /favorites` | lista ulubionych | zalogowany |
+| `GET /admin/bars` | wszystkie bary razem z wyłączonymi | administrator |
 | `POST /admin/bars`, `PUT/PATCH /admin/bars/{bar_id}` | dodanie, edycja, wyłączenie baru | administrator |
+| `GET /admin/drinks` | wszystkie napoje razem z wyłączonymi | administrator |
 | `POST /admin/drinks`, `PUT/PATCH /admin/drinks/{drink_id}` | dodanie, edycja, wyłączenie napoju | administrator |
 
 Zalogowany użytkownik wysyła nagłówek `Authorization: Bearer <token>`. Błędy mają komunikat po polsku w polu `detail`: 401 brak tokenu, 403 brak uprawnień, 404 brak zasobu, 409 duplikat, 422 błędne dane (lista pól).
