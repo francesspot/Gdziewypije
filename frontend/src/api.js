@@ -157,3 +157,42 @@ export function addFavorite(barId) {
 export function removeFavorite(barId) {
   return request(`/bars/${barId}/favorite`, { method: 'DELETE' })
 }
+
+// Ścieżki administratora; backend odrzuca je z 403 dla zwykłego użytkownika
+export function getAdminBars() {
+  return request('/admin/bars')
+}
+
+export function createBar(data) {
+  return request('/admin/bars', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function updateBar(barId, data) {
+  return request(`/admin/bars/${barId}`, { method: 'PUT', body: JSON.stringify(data) })
+}
+
+export function setBarActive(barId, isActive) {
+  return request(`/admin/bars/${barId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ is_active: isActive }),
+  })
+}
+
+export function getAdminDrinks() {
+  return request('/admin/drinks')
+}
+
+export function createDrink(data) {
+  return request('/admin/drinks', { method: 'POST', body: JSON.stringify(data) })
+}
+
+export function updateDrink(drinkId, data) {
+  return request(`/admin/drinks/${drinkId}`, { method: 'PUT', body: JSON.stringify(data) })
+}
+
+export function setDrinkActive(drinkId, isActive) {
+  return request(`/admin/drinks/${drinkId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ is_active: isActive }),
+  })
+}
