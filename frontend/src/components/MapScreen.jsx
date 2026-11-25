@@ -6,9 +6,13 @@ import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { getBars } from '../api'
 import BarPopup from './BarPopup'
+import { USER_LOCATION_ARROW_MARKUP } from './icons/UserLocationArrowIcon'
 
 const WROCLAW_CENTER = [51.11, 17.04]
 const INITIAL_ZOOM = 13
+const USER_LOCATION_ZOOM = 15
+const USER_MARKER_SIZE = 64
+const USER_MARKER_HALO_RADIUS = 26
 
 // Vite nie serwuje domyślnych ścieżek ikon Leaflet.
 delete L.Icon.Default.prototype._getIconUrl
@@ -92,6 +96,17 @@ function createBarMarkerIcon(mode, bar) {
   })
 }
 
+function createUserLocationIcon(headingDeg) {
+  const rotation = Number.isFinite(headingDeg) ? headingDeg : 0
+  const html = `<div class="user-location-marker" role="img" aria-label="Twoja lokalizacja"><div class="user-location-halo"></div><div class="user-location-arrow" style="transform: rotate(${rotation}deg)">${USER_LOCATION_ARROW_MARKUP}</div></div>`
+  return L.divIcon({
+    className: '',
+    html,
+    iconSize: [USER_MARKER_SIZE, USER_MARKER_SIZE],
+    iconAnchor: [USER_MARKER_SIZE / 2, USER_MARKER_SIZE / 2],
+  })
+}
+
 function MapScreen({
   selectedBarId,
   favoriteIds,
@@ -103,10 +118,13 @@ function MapScreen({
   onConfirmPrice,
   onReportPrice,
   onRequireLogin,
+  onUserLocationChange,
 }) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
   const markersLayerRef = useRef(null)
+  const userMarkerRef = useRef(null)
+  const geoPendingRef = useRef(false)
   const userMovedMapRef = useRef(false)
   const fitBoundsDoneRef = useRef(false)
   const [mapReady, setMapReady] = useState(false)
@@ -114,6 +132,8 @@ function MapScreen({
   const [mode, setMode] = useState('rating')
   const [fetchError, setFetchError] = useState('')
   const [onlyFavorites, setOnlyFavorites] = useState(false)
+  const [geoPending, setGeoPending] = useState(false)
+  const [geoAlert, setGeoAlert] = useState('')
   // Po wylogowaniu filtr nie działa, żeby mapa nie została pusta; po ponownym zalogowaniu wraca
   const showOnlyFavorites = onlyFavorites && loggedIn
   const noFavoritesVisible =
@@ -148,11 +168,89 @@ function MapScreen({
     setMapReady(true)
 
     return () => {
+      if (userMarkerRef.current) {
+        userMarkerRef.current = null
+      }
       map.remove()
       mapRef.current = null
       setMapReady(false)
     }
   }, [])
+
+  useEffect(() => {
+    if (!geoAlert) {
+      return
+    }
+    const timer = setTimeout(() => setGeoAlert(''), 5000)
+    return () => clearTimeout(timer)
+  }, [geoAlert])
+
+  function clearUserMarker() {
+    const map = mapRef.current
+    if (userMarkerRef.current && map) {
+      map.removeLayer(userMarkerRef.current)
+      userMarkerRef.current = null
+    }
+    onUserLocationChange?.(null)
+  }
+
+  function handleLocate() {
+    if (!navigator.geolocation || geoPendingRef.current || !mapRef.current) {
+      return
+    }
+
+    clearUserMarker()
+    setGeoAlert('')
+    geoPendingRef.current = true
+    setGeoPending(true)
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        geoPendingRef.current = false
+        setGeoPending(false)
+
+        const map = mapRef.current
+        if (!map) {
+          return
+        }
+
+        const { latitude, longitude, heading } = position.coords
+        const headingDeg = Number.isFinite(heading) ? heading : 0
+        const marker = L.marker([latitude, longitude], {
+          icon: createUserLocationIcon(headingDeg),
+          interactive: false,
+          zIndexOffset: 1000,
+        })
+        marker.addTo(map)
+        userMarkerRef.current = marker
+        map.setView([latitude, longitude], USER_LOCATION_ZOOM)
+
+        onUserLocationChange?.({
+          lat: latitude,
+          lon: longitude,
+          heading: Number.isFinite(heading) ? heading : null,
+        })
+      },
+      (error) => {
+        geoPendingRef.current = false
+        setGeoPending(false)
+        clearUserMarker()
+
+        let message = ''
+        if (error.code === 1) {
+          message = 'Bez zgody na lokalizację mapa działa dalej.'
+        } else if (error.code === 2) {
+          message = 'Nie udało się ustalić lokalizacji.'
+        } else if (error.code === 3) {
+          message = 'Upłynął limit czasu na lokalizację.'
+        }
+        if (message) {
+          setGeoAlert(message)
+        }
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    )
+  }
 
   useEffect(() => {
     if (!mapReady) {
@@ -254,6 +352,11 @@ function MapScreen({
           Brak ulubionych barów
         </p>
       ) : null}
+      {geoAlert ? (
+        <p className="map-geo-alert" role="status">
+          {geoAlert}
+        </p>
+      ) : null}
       <div className="map-canvas" ref={mapContainerRef} />
       {selectedBarId != null ? (
         <BarPopup
@@ -331,7 +434,15 @@ function MapScreen({
         <button type="button" aria-label="Oddal" onClick={() => mapRef.current?.zoomOut()}>
           −
         </button>
-        <button className="map-locate" type="button" aria-label="Moja lokalizacja">
+        <button
+          className="map-locate"
+          type="button"
+          aria-label="Pokaż swoją lokalizację"
+          title="Pokaż swoją lokalizację"
+          aria-busy={geoPending || undefined}
+          disabled={geoPending}
+          onClick={handleLocate}
+        >
           <svg viewBox="0 0 24 24" aria-hidden="true">
             <circle cx="12" cy="12" r="3.2" fill="none" stroke="var(--bg-foam)" strokeWidth="2.5" />
             <path

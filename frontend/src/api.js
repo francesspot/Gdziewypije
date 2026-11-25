@@ -111,6 +111,15 @@ export function getBars() {
   return request('/bars')
 }
 
+export function getNearby(lat, lon, radiusM) {
+  const params = new URLSearchParams({
+    lat: String(lat),
+    lon: String(lon),
+    radius_m: String(radiusM),
+  })
+  return request(`/nearby?${params}`)
+}
+
 export function getTopMonth() {
   return request('/top-month')
 }

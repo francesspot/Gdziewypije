@@ -34,6 +34,8 @@ function App() {
   // Samo id w zależnościach, bo odświeżenie danych konta (getMe) daje nowy obiekt tego samego użytkownika
   const userId = user?.id ?? null
   const [adminOpen, setAdminOpen] = useState(false)
+  // Stan na listę „w pobliżu” (zadanie 4); ustawiany po udanej lokalizacji na mapie
+  const [userPosition, setUserPosition] = useState(null)
   // Rola jest sprawdzana też w backendzie (403), tutaj decyduje tylko o pokazaniu panelu
   const isAdmin = user?.role === 'admin'
 
@@ -278,6 +280,7 @@ function App() {
         onConfirmPrice={handleConfirmPrice}
         onReportPrice={handleReportPrice}
         onRequireLogin={() => setAccountOpen(true)}
+        onUserLocationChange={setUserPosition}
       />
       {!accountOpen ? (
         <button
