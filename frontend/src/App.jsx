@@ -1,5 +1,14 @@
 import { useEffect, useState } from 'react'
-import { clearSession, getMe, getSession, setSession } from './api'
+import {
+  addFavorite,
+  clearSession,
+  getFavorites,
+  getMe,
+  getSession,
+  rateBar,
+  removeFavorite,
+  setSession,
+} from './api'
 import AccountPanel from './components/AccountPanel'
 import AdminPanel from './components/AdminPanel'
 import ListPanel from './components/ListPanel'
@@ -16,11 +25,14 @@ function App() {
   const [accountOpen, setAccountOpen] = useState(false)
   // Sesja z localStorage, żeby po odświeżeniu strony użytkownik był dalej zalogowany
   const [user, setUser] = useState(() => getSession()?.user ?? null)
+  const [favoriteError, setFavoriteError] = useState('')
+  // Zwiększenie licznika każe mapie, liście, TOP i okienku baru pobrać dane od nowa
+  const [barsVersion, setBarsVersion] = useState(0)
+  // Samo id w zależnościach, bo odświeżenie danych konta (getMe) daje nowy obiekt tego samego użytkownika
+  const userId = user?.id ?? null
   const [adminOpen, setAdminOpen] = useState(false)
   // Rola jest sprawdzana też w backendzie (403), tutaj decyduje tylko o pokazaniu panelu
   const isAdmin = user?.role === 'admin'
-  // Licznik zmian z panelu administratora; mapa i lista pobierają bary od nowa, gdy się zwiększy
-  const [barsVersion, setBarsVersion] = useState(0)
 
   useEffect(() => {
     // Token mógł wygasnąć albo konto zostało wyłączone, więc zapisana sesja jest sprawdzana w backendzie
@@ -55,6 +67,38 @@ function App() {
     }
   }, [])
 
+  useEffect(() => {
+    if (userId == null) {
+      return
+    }
+    let cancelled = false
+
+    getFavorites()
+      .then((favorites) => {
+        if (!cancelled) {
+          setFavoriteIds(favorites.map((favorite) => favorite.bar_id))
+        }
+      })
+      .catch((err) => {
+        // 401 obsługuje sprawdzenie sesji przy starcie, więc nie jest pokazywany drugi raz
+        if (!cancelled && err.status !== 401) {
+          setFavoriteError(err.message)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [userId])
+
+  useEffect(() => {
+    if (!favoriteError) {
+      return
+    }
+    const timer = setTimeout(() => setFavoriteError(''), 4000)
+    return () => clearTimeout(timer)
+  }, [favoriteError])
+
   function handleLoggedIn(session) {
     setSession(session)
     setUser(session.user)
@@ -64,6 +108,7 @@ function App() {
   function handleLogout() {
     clearSession()
     setUser(null)
+    setFavoriteIds([])
     setAccountOpen(false)
     setAdminOpen(false)
   }
@@ -73,10 +118,65 @@ function App() {
     setAdminOpen(true)
   }
 
-  function toggleFavorite(barId) {
+  // Wygasły token w trakcie pracy: wylogowanie i okno logowania zamiast samego komunikatu
+  function handleUnauthorized() {
+    clearSession()
+    setUser(null)
+    setFavoriteIds([])
+    setAccountOpen(true)
+  }
+
+  async function toggleFavorite(barId) {
+    // Ulubione ma tylko zalogowany użytkownik (WB.08), więc gość trafia do logowania
+    if (!user) {
+      setAccountOpen(true)
+      return
+    }
+    const isFavorite = favoriteIds.includes(barId)
+    try {
+      if (isFavorite) {
+        await removeFavorite(barId)
+      } else {
+        await addFavorite(barId)
+      }
+    } catch (err) {
+      if (err.status === 401) {
+        handleUnauthorized()
+        return
+      }
+      // 409 przy dodaniu i 404 przy usunięciu oznaczają, że backend ma już docelowy stan (np. zmiana w innej karcie)
+      const alreadyDone = isFavorite ? err.status === 404 : err.status === 409
+      if (!alreadyDone) {
+        setFavoriteError(err.message)
+        return
+      }
+    }
+    setFavoriteError('')
     setFavoriteIds((current) =>
-      current.includes(barId) ? current.filter((id) => id !== barId) : [...current, barId],
+      isFavorite ? current.filter((id) => id !== barId) : [...current, barId],
     )
+    // Ulubione z bieżącego miesiąca liczą się do TOP (v_top_month)
+    setBarsVersion((version) => version + 1)
+  }
+
+  // Zwraca false, gdy ocena nie została zapisana, bo trzeba się zalogować; inne błędy pokazuje okienko baru
+  async function handleRate(barId, value) {
+    if (!user) {
+      setAccountOpen(true)
+      return false
+    }
+    try {
+      await rateBar(barId, value)
+    } catch (err) {
+      if (err.status === 401) {
+        handleUnauthorized()
+        return false
+      }
+      throw err
+    }
+    // Średnią liczy baza (v_bar_stats), więc nowa wartość wymaga ponownego pobrania barów
+    setBarsVersion((version) => version + 1)
+    return true
   }
 
   return (
@@ -98,9 +198,14 @@ function App() {
       <MapScreen
         topOpen={topOpen}
         listOpen={listOpen}
-        barsVersion={barsVersion}
         selectedBarId={selectedBarId}
+        favoriteIds={favoriteIds}
+        barsVersion={barsVersion}
+        loggedIn={user != null}
         onSelectBar={setSelectedBarId}
+        onToggleFavorite={toggleFavorite}
+        onRate={handleRate}
+        onRequireLogin={() => setAccountOpen(true)}
         onOpenTop={() => setTopOpen(true)}
         onOpenList={() => setListOpen(true)}
       />
@@ -114,8 +219,14 @@ function App() {
           {user ? user.display_name : 'Zaloguj'}
         </button>
       ) : null}
+      {favoriteError ? (
+        <p className="favorite-error" role="alert">
+          {favoriteError}
+        </p>
+      ) : null}
       <TopPanel
         open={topOpen}
+        barsVersion={barsVersion}
         onClose={() => setTopOpen(false)}
         onSwitchToList={() => {
           setTopOpen(false)

@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getBars, getRanking } from '../api'
 import CloseArrow from './CloseArrow'
+import FavoriteStar from './FavoriteStar'
 
 function formatRating(avgRating) {
   return avgRating == null ? '–' : avgRating.toFixed(1)
@@ -11,25 +12,11 @@ function BarListItem({ bar, isFavorite, onToggleFavorite, onSelectBar }) {
     <li>
       {/* Pusta komórka bez miejsca wyrównuje nazwy w obu sekcjach */}
       <span className="bar-rank">{bar.rank == null ? '' : `${bar.rank}.`}</span>
-      <button
-        className={isFavorite ? 'favorite-star is-on' : 'favorite-star'}
-        type="button"
-        aria-pressed={isFavorite}
-        aria-label={
-          isFavorite ? `Usuń ${bar.name} z ulubionych` : `Dodaj ${bar.name} do ulubionych`
-        }
-        onClick={() => onToggleFavorite(bar.id)}
-      >
-        <svg viewBox="0 0 24 24" aria-hidden="true">
-          <path
-            d="M12 3.2 14.6 8.8 20.8 9.4 16.2 13.6 17.6 19.8 12 16.8 6.4 19.8 7.8 13.6 3.2 9.4 9.4 8.8 Z"
-            stroke="var(--ink-oak)"
-            strokeWidth="2.5"
-            strokeLinejoin="round"
-            strokeLinecap="round"
-          />
-        </svg>
-      </button>
+      <FavoriteStar
+        barName={bar.name}
+        isFavorite={isFavorite}
+        onToggle={() => onToggleFavorite(bar.id)}
+      />
       <button className="bar-name" type="button" onClick={() => onSelectBar(bar.id)}>
         {bar.name}
       </button>

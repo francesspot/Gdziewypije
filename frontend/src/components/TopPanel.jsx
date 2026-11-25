@@ -4,7 +4,7 @@ import BeerStackColumn from './BeerStackColumn'
 import CloseArrow from './CloseArrow'
 import { buildTopPodium } from '../topPodium'
 
-function TopPanel({ open, onClose, onSwitchToList }) {
+function TopPanel({ open, barsVersion, onClose, onSwitchToList }) {
   const [bars, setBars] = useState([])
   const [error, setError] = useState('')
   const [loaded, setLoaded] = useState(false)
@@ -32,7 +32,7 @@ function TopPanel({ open, onClose, onSwitchToList }) {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [barsVersion])
 
   return (
     <aside

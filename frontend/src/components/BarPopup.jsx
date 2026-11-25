@@ -1,5 +1,7 @@
 import { useEffect, useState } from 'react'
 import { getBar } from '../api'
+import FavoriteStar from './FavoriteStar'
+import RatingStars from './RatingStars'
 
 function formatRating(avgRating) {
   return avgRating == null ? 'brak ocen' : avgRating.toFixed(1)
@@ -13,10 +15,14 @@ function formatPrice(amount) {
 }
 
 // Komponent dostaje key={barId}, więc wybór innego baru montuje go od nowa ze stanem ładowania.
-function BarPopup({ barId, onClose }) {
+function BarPopup({ barId, isFavorite, barsVersion, onToggleFavorite, onRate, onClose }) {
   const [bar, setBar] = useState(null)
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(true)
+  // Backend nie zwraca własnej oceny użytkownika, więc podświetlona jest tylko ocena wystawiona w tym okienku
+  const [myRating, setMyRating] = useState(null)
+  const [ratingSaving, setRatingSaving] = useState(false)
+  const [ratingError, setRatingError] = useState('')
 
   useEffect(() => {
     let cancelled = false
@@ -26,6 +32,7 @@ function BarPopup({ barId, onClose }) {
       .then((data) => {
         if (!cancelled) {
           setBar(data)
+          setError('')
         }
       })
       .catch((err) => {
@@ -42,7 +49,8 @@ function BarPopup({ barId, onClose }) {
     return () => {
       cancelled = true
     }
-  }, [barId])
+    // barsVersion rośnie po zapisaniu oceny, więc okienko pobiera nową średnią
+  }, [barId, barsVersion])
 
   useEffect(() => {
     function handleKeyDown(event) {
@@ -57,10 +65,31 @@ function BarPopup({ barId, onClose }) {
     }
   }, [onClose])
 
+  async function handleRate(value) {
+    setRatingSaving(true)
+    setRatingError('')
+    try {
+      if (await onRate(barId, value)) {
+        setMyRating(value)
+      }
+    } catch (err) {
+      setRatingError(err.message)
+    } finally {
+      setRatingSaving(false)
+    }
+  }
+
   return (
     <section className="bar-popup" aria-label={bar ? `Bar ${bar.name}` : 'Szczegóły baru'}>
       <header className="bar-popup-header">
         <h2>{bar ? bar.name : 'Bar'}</h2>
+        {bar ? (
+          <FavoriteStar
+            barName={bar.name}
+            isFavorite={isFavorite}
+            onToggle={() => onToggleFavorite(barId)}
+          />
+        ) : null}
         <button className="bar-popup-close" type="button" onClick={onClose} aria-label="Zamknij okienko baru">
           ×
         </button>
@@ -79,6 +108,17 @@ function BarPopup({ barId, onClose }) {
         <p className="bar-popup-rating">
           <span className="bar-popup-rating-value">Ocena: {formatRating(bar.avg_rating)}</span>
           <span className="bar-popup-rating-count">liczba ocen: {bar.ratings_count}</span>
+        </p>
+      ) : null}
+      {bar ? (
+        <div className="bar-popup-your-rating">
+          <span>Twoja ocena:</span>
+          <RatingStars value={myRating} disabled={ratingSaving} onRate={handleRate} />
+        </div>
+      ) : null}
+      {ratingError ? (
+        <p className="bar-popup-error" role="alert">
+          {ratingError}
         </p>
       ) : null}
       {bar ? (
