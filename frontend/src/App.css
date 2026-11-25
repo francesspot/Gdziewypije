@@ -620,8 +620,18 @@
 .nearby-name {
   min-width: 0;
   flex: 1;
+  padding: 0;
+  border: none;
+  background: none;
+  font: inherit;
   text-align: left;
   color: var(--ink-oak);
+  cursor: pointer;
+}
+
+.nearby-name:hover,
+.nearby-name:focus-visible {
+  text-decoration: underline;
 }
 
 .nearby-distance {

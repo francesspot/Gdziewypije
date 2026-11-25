@@ -1,7 +1,7 @@
 import { formatDistanceMeters } from '../geoDistance'
 import CloseArrow from './CloseArrow'
 
-function NearbyList({ open, bars, onClose }) {
+function NearbyList({ open, bars, onSelectBar, onClose }) {
   if (!open) {
     return null
   }
@@ -24,7 +24,9 @@ function NearbyList({ open, bars, onClose }) {
         <ul className="nearby-list">
           {bars.map((bar) => (
             <li key={bar.id} className="nearby-row">
-              <span className="nearby-name">{bar.name}</span>
+              <button className="nearby-name" type="button" onClick={() => onSelectBar(bar.id)}>
+                {bar.name}
+              </button>
               <span className="nearby-distance">{formatDistanceMeters(bar.distance_m)}</span>
             </li>
           ))}

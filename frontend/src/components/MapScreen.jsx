@@ -510,7 +510,12 @@ function MapScreen({
         </p>
       ) : null}
       <div className="map-canvas" ref={mapContainerRef} />
-      <NearbyList open={nearbyOpen} bars={nearbyBars} onClose={() => setNearbyOpen(false)} />
+      <NearbyList
+        open={nearbyOpen}
+        bars={nearbyBars}
+        onSelectBar={onSelectBar}
+        onClose={() => setNearbyOpen(false)}
+      />
       {selectedBarId != null ? (
         <BarPopup
           key={selectedBarId}
