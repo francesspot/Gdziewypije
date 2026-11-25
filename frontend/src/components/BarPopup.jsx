@@ -202,9 +202,9 @@ function BarPopup({
         <>
           <div className="bar-popup-prices-section">
             <h3 className="bar-popup-prices-title">Ceny</h3>
-            {/* Pusta lista z backendu oznacza bar bez cen (WF.04). */}
+            {/* Pusta lista z backendu oznacza bar bez cen (WF.04); „brak danych” jak na markerze. */}
             {bar.prices.length === 0 ? (
-              <p className="bar-popup-no-prices">Brak zgłoszonych cen. Możesz dodać pierwszą poniżej.</p>
+              <p className="bar-popup-no-prices">Brak danych. Możesz dodać pierwszą cenę poniżej.</p>
             ) : (
               <ul className="bar-popup-prices">
                 {bar.prices.map((price) => (
