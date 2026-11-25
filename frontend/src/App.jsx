@@ -444,7 +444,6 @@ function App() {
         navigation={navigation}
         navOpen={navOpen}
         navPickTarget={navPickTarget}
-        userPosition={userPosition}
         onNavigationPick={handleNavigationPick}
         onNavigationPickBar={handleNavigationPickBar}
         onSelectBar={setSelectedBarId}

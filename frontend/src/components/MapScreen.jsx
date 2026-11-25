@@ -146,7 +146,6 @@ function MapScreen({
   onNavigationPick,
   onNavigationPickBar,
   onNavigateToBar,
-  userPosition,
 }) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
@@ -247,23 +246,13 @@ function MapScreen({
       return
     }
 
-    let knownLat = userPosition?.lat
-    let knownLon = userPosition?.lon
-    if (knownLat == null && userMarkerRef.current) {
-      const latLng = userMarkerRef.current.getLatLng()
-      knownLat = latLng.lat
-      knownLon = latLng.lng
-    }
-    if (knownLat != null && knownLon != null) {
-      map.setView([knownLat, knownLon], LOCATE_ZOOM)
-      return
-    }
-
     if (!navigator.geolocation) {
+      setGeoAlert('Przeglądarka nie obsługuje lokalizacji. Mapa działa dalej.')
       return
     }
 
-    clearUserMarker()
+    // Każde kliknięcie pobiera świeżą pozycję, więc lista „W pobliżu” otwiera się ponownie i jest aktualna.
+    // Stary marker zostaje do czasu odpowiedzi, żeby nie znikał podczas oczekiwania.
     setGeoAlert('')
     setNearbyError('')
     geoPendingRef.current = true
@@ -277,6 +266,10 @@ function MapScreen({
         const map = mapRef.current
         if (!map) {
           return
+        }
+
+        if (userMarkerRef.current) {
+          map.removeLayer(userMarkerRef.current)
         }
 
         const { latitude, longitude, heading } = position.coords
