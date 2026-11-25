@@ -12,7 +12,7 @@ const WROCLAW_CENTER = [51.11, 17.04]
 const INITIAL_ZOOM = 13
 const USER_LOCATION_ZOOM = 15
 const USER_MARKER_SIZE = 64
-const USER_MARKER_HALO_RADIUS = 26
+const ROUTE_COLOR = '#c026d3'
 
 // Vite nie serwuje domyślnych ścieżek ikon Leaflet.
 delete L.Icon.Default.prototype._getIconUrl
@@ -96,6 +96,24 @@ function createBarMarkerIcon(mode, bar) {
   })
 }
 
+function createRouteStartIcon() {
+  return L.divIcon({
+    className: 'route-marker',
+    html: '<div class="route-marker-start"></div>',
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  })
+}
+
+function createRouteEndIcon() {
+  return L.divIcon({
+    className: 'route-marker',
+    html: '<div class="route-marker-end"></div>',
+    iconSize: [22, 30],
+    iconAnchor: [11, 28],
+  })
+}
+
 function createUserLocationIcon(headingDeg) {
   const rotation = Number.isFinite(headingDeg) ? headingDeg : 0
   const html = `<div class="user-location-marker" role="img" aria-label="Twoja lokalizacja"><div class="user-location-halo"></div><div class="user-location-arrow" style="transform: rotate(${rotation}deg)">${USER_LOCATION_ARROW_MARKUP}</div></div>`
@@ -119,10 +137,13 @@ function MapScreen({
   onReportPrice,
   onRequireLogin,
   onUserLocationChange,
+  navigation,
+  onNavigateToBar,
 }) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
   const markersLayerRef = useRef(null)
+  const routeLayerRef = useRef(null)
   const userMarkerRef = useRef(null)
   const geoPendingRef = useRef(false)
   const userMovedMapRef = useRef(false)
@@ -340,6 +361,58 @@ function MapScreen({
     }
   }, [bars, mode, mapReady, onSelectBar, showOnlyFavorites, favoriteIds])
 
+  useEffect(() => {
+    if (!mapReady) {
+      return
+    }
+    const map = mapRef.current
+    if (!map) {
+      return
+    }
+
+    if (routeLayerRef.current) {
+      map.removeLayer(routeLayerRef.current)
+      routeLayerRef.current = null
+    }
+
+    const routeCoords = navigation?.route
+    if (!routeCoords?.length) {
+      return
+    }
+
+    const layer = L.layerGroup()
+    const polyline = L.polyline(routeCoords, {
+      color: ROUTE_COLOR,
+      weight: 6,
+      opacity: 0.85,
+    })
+    polyline.addTo(layer)
+
+    L.marker(routeCoords[0], {
+      icon: createRouteStartIcon(),
+      interactive: false,
+      zIndexOffset: 500,
+    }).addTo(layer)
+    L.marker(routeCoords[routeCoords.length - 1], {
+      icon: createRouteEndIcon(),
+      interactive: false,
+      zIndexOffset: 500,
+    }).addTo(layer)
+
+    layer.addTo(map)
+    routeLayerRef.current = layer
+    map.fitBounds(polyline.getBounds(), { padding: [48, 48] })
+
+    return () => {
+      if (map.hasLayer(layer)) {
+        map.removeLayer(layer)
+      }
+      if (routeLayerRef.current === layer) {
+        routeLayerRef.current = null
+      }
+    }
+  }, [navigation?.route, mapReady])
+
   return (
     <section className="map-screen" aria-label="Mapa">
       {fetchError ? (
@@ -368,6 +441,7 @@ function MapScreen({
           onRate={onRate}
           onConfirmPrice={onConfirmPrice}
           onReportPrice={onReportPrice}
+          onNavigateToBar={onNavigateToBar}
           onClose={() => onSelectBar(null)}
         />
       ) : null}

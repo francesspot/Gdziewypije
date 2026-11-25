@@ -16,12 +16,23 @@ import AdminPanel from './components/AdminPanel'
 import LeftToolRail from './components/LeftToolRail'
 import ListPanel from './components/ListPanel'
 import MapScreen from './components/MapScreen'
+import NavigationPanel from './components/NavigationPanel'
 import TopPanel from './components/TopPanel'
 import './App.css'
 
+const EMPTY_NAVIGATION = {
+  origin: null,
+  dest: null,
+  route: null,
+  distanceM: null,
+  durationS: null,
+}
+
 function App() {
+  const [navOpen, setNavOpen] = useState(false)
   const [topOpen, setTopOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
+  const [navigation, setNavigation] = useState(EMPTY_NAVIGATION)
   const [favoriteIds, setFavoriteIds] = useState([])
   // Stan w App, bo okienko baru otwiera zarówno marker na mapie, jak i pozycja na liście.
   const [selectedBarId, setSelectedBarId] = useState(null)
@@ -103,6 +114,47 @@ function App() {
     const timer = setTimeout(() => setFavoriteError(''), 4000)
     return () => clearTimeout(timer)
   }, [favoriteError])
+
+  useEffect(() => {
+    if (!navOpen || !userPosition) {
+      return
+    }
+    setNavigation((prev) => {
+      if (prev.origin) {
+        return prev
+      }
+      return {
+        ...prev,
+        origin: {
+          lat: userPosition.lat,
+          lon: userPosition.lon,
+          label: 'Moja lokalizacja',
+        },
+      }
+    })
+  }, [navOpen, userPosition])
+
+  useEffect(() => {
+    if (!userPosition) {
+      return
+    }
+    setNavigation((prev) => {
+      if (prev.origin?.label !== 'Moja lokalizacja') {
+        return prev
+      }
+      if (prev.origin.lat === userPosition.lat && prev.origin.lon === userPosition.lon) {
+        return prev
+      }
+      return {
+        ...prev,
+        origin: {
+          lat: userPosition.lat,
+          lon: userPosition.lon,
+          label: 'Moja lokalizacja',
+        },
+      }
+    })
+  }, [userPosition])
 
   function handleLoggedIn(session) {
     setSession(session)
@@ -224,12 +276,34 @@ function App() {
     return true
   }
 
+  function closeOtherLeftPanels(except) {
+    if (except !== 'nav') {
+      setNavOpen(false)
+    }
+    if (except !== 'top') {
+      setTopOpen(false)
+    }
+    if (except !== 'list') {
+      setListOpen(false)
+    }
+  }
+
+  function toggleNav() {
+    setNavOpen((wasOpen) => {
+      if (wasOpen) {
+        return false
+      }
+      closeOtherLeftPanels('nav')
+      return true
+    })
+  }
+
   function toggleTop() {
     setTopOpen((wasOpen) => {
       if (wasOpen) {
         return false
       }
-      setListOpen(false)
+      closeOtherLeftPanels('top')
       return true
     })
   }
@@ -239,17 +313,57 @@ function App() {
       if (wasOpen) {
         return false
       }
-      setTopOpen(false)
+      closeOtherLeftPanels('list')
       return true
     })
   }
 
-  const leftPanelOpen = topOpen || listOpen
+  function handleNavigationChange(updater) {
+    setNavigation((prev) => (typeof updater === 'function' ? updater(prev) : updater))
+  }
+
+  function handleClearRoute() {
+    setNavigation((prev) => ({
+      ...prev,
+      route: null,
+      distanceM: null,
+      durationS: null,
+    }))
+  }
+
+  function handleNavigateToBar(bar) {
+    setSelectedBarId(null)
+    closeOtherLeftPanels('nav')
+    setNavOpen(true)
+    setNavigation((prev) => ({
+      ...prev,
+      dest: {
+        lat: bar.latitude,
+        lon: bar.longitude,
+        label: bar.name,
+      },
+      origin:
+        prev.origin ??
+        (userPosition
+          ? {
+              lat: userPosition.lat,
+              lon: userPosition.lon,
+              label: 'Moja lokalizacja',
+            }
+          : null),
+      route: null,
+      distanceM: null,
+      durationS: null,
+    }))
+  }
+
+  const leftPanelOpen = navOpen || topOpen || listOpen
 
   return (
     <div
       className={[
         'app',
+        navOpen ? 'app-nav-open' : '',
         topOpen ? 'app-top-open' : '',
         listOpen ? 'app-list-open' : '',
         leftPanelOpen ? 'app-left-panel-open' : '',
@@ -264,8 +378,10 @@ function App() {
         </filter>
       </svg>
       <LeftToolRail
+        navOpen={navOpen}
         topOpen={topOpen}
         listOpen={listOpen}
+        onToggleNav={toggleNav}
         onToggleTop={toggleTop}
         onToggleList={toggleList}
       />
@@ -274,6 +390,7 @@ function App() {
         favoriteIds={favoriteIds}
         barsVersion={barsVersion}
         loggedIn={user != null}
+        navigation={navigation}
         onSelectBar={setSelectedBarId}
         onToggleFavorite={toggleFavorite}
         onRate={handleRate}
@@ -281,6 +398,7 @@ function App() {
         onReportPrice={handleReportPrice}
         onRequireLogin={() => setAccountOpen(true)}
         onUserLocationChange={setUserPosition}
+        onNavigateToBar={handleNavigateToBar}
       />
       {!accountOpen ? (
         <button
@@ -297,6 +415,14 @@ function App() {
           {favoriteError}
         </p>
       ) : null}
+      <NavigationPanel
+        open={navOpen}
+        barsVersion={barsVersion}
+        navigation={navigation}
+        onNavigationChange={handleNavigationChange}
+        onClearRoute={handleClearRoute}
+        onClose={() => setNavOpen(false)}
+      />
       <TopPanel
         open={topOpen}
         barsVersion={barsVersion}

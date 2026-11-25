@@ -29,6 +29,7 @@ function BarPopup({
   onRate,
   onConfirmPrice,
   onReportPrice,
+  onNavigateToBar,
   onClose,
 }) {
   const [bar, setBar] = useState(null)
@@ -241,9 +242,28 @@ function BarPopup({
               onCancel={() => setReportForm(null)}
             />
           ) : (
-            <button className="bar-popup-report" type="button" onClick={() => setReportForm({ drinkId: null })}>
-              zgłoś cenę
-            </button>
+            <div className="bar-popup-actions">
+              <button
+                className="bar-popup-report"
+                type="button"
+                onClick={() => setReportForm({ drinkId: null })}
+              >
+                zgłoś cenę
+              </button>
+              <button
+                className="bar-popup-nav sketch-button"
+                type="button"
+                onClick={() =>
+                  onNavigateToBar({
+                    name: bar.name,
+                    latitude: bar.latitude,
+                    longitude: bar.longitude,
+                  })
+                }
+              >
+                Nawigacja
+              </button>
+            </div>
           )}
         </>
       ) : null}
