@@ -1,6 +1,6 @@
 import { forwardRef, useEffect, useImperativeHandle, useRef, useState } from 'react'
 import { getBars } from '../api'
-import { computeDrivingRoute, mergeRouteIntoNavigation } from '../computeDrivingRoute'
+import { fetchOsrmRoute } from '../fetchOsrmRoute'
 import CloseArrow from './CloseArrow'
 
 function formatDistance(meters) {
@@ -272,8 +272,8 @@ const NavigationPanel = forwardRef(function NavigationPanel(
     setRoutePending(true)
     try {
       const profile = profileOverride ?? navigation.routeProfile ?? 'driving'
-      const result = await computeDrivingRoute(origin.lat, origin.lon, dest.lat, dest.lon, profile)
-      onNavigationChange((prev) => mergeRouteIntoNavigation(prev, result))
+      const result = await fetchOsrmRoute(origin.lat, origin.lon, dest.lat, dest.lon, profile)
+      onNavigationChange((prev) => ({ ...prev, ...result }))
       return true
     } catch (err) {
       setRouteError(err.message)

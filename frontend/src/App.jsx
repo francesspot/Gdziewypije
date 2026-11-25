@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
-import { applyRouteToNavigation, computeDrivingRoute } from './computeDrivingRoute'
+import { fetchOsrmRoute } from './fetchOsrmRoute'
 import {
   addFavorite,
   clearSession,
@@ -383,8 +383,8 @@ function App() {
 
     if (origin?.lat != null && origin?.lon != null && lat != null && lon != null) {
       try {
-        const result = await computeDrivingRoute(origin.lat, origin.lon, lat, lon, routeProfile)
-        applyRouteToNavigation(setNavigation, result)
+        const result = await fetchOsrmRoute(origin.lat, origin.lon, lat, lon, routeProfile)
+        setNavigation((prev) => ({ ...prev, ...result }))
         navigationPanelRef.current?.clearRouteError?.()
       } catch (err) {
         handleClearRoute()
