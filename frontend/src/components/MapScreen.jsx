@@ -7,11 +7,12 @@ import markerShadow from 'leaflet/dist/images/marker-shadow.png'
 import { getBars, getNearby } from '../api'
 import BarPopup from './BarPopup'
 import NearbyList from './NearbyList'
+import { LocateCrosshairIcon } from './icons'
 import { USER_LOCATION_ARROW_MARKUP } from './icons/UserLocationArrowIcon'
 
 const WROCLAW_CENTER = [51.11, 17.04]
 const INITIAL_ZOOM = 13
-const USER_LOCATION_ZOOM = 15
+const LOCATE_ZOOM = 15
 const USER_MARKER_SIZE = 64
 const NEARBY_RADIUS_M = 2000
 const ROUTE_COLOR = '#c026d3'
@@ -140,7 +141,12 @@ function MapScreen({
   onRequireLogin,
   onUserLocationChange,
   navigation,
+  navOpen,
+  navPickTarget,
+  onNavigationPick,
+  onNavigationPickBar,
   onNavigateToBar,
+  userPosition,
 }) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
@@ -236,7 +242,24 @@ function MapScreen({
   }
 
   function handleLocate() {
-    if (!navigator.geolocation || geoPendingRef.current || !mapRef.current) {
+    const map = mapRef.current
+    if (!map || geoPendingRef.current) {
+      return
+    }
+
+    let knownLat = userPosition?.lat
+    let knownLon = userPosition?.lon
+    if (knownLat == null && userMarkerRef.current) {
+      const latLng = userMarkerRef.current.getLatLng()
+      knownLat = latLng.lat
+      knownLon = latLng.lng
+    }
+    if (knownLat != null && knownLon != null) {
+      map.setView([knownLat, knownLon], LOCATE_ZOOM)
+      return
+    }
+
+    if (!navigator.geolocation) {
       return
     }
 
@@ -265,7 +288,7 @@ function MapScreen({
         })
         marker.addTo(map)
         userMarkerRef.current = marker
-        map.setView([latitude, longitude], USER_LOCATION_ZOOM)
+        map.setView([latitude, longitude], LOCATE_ZOOM)
 
         onUserLocationChange?.({
           lat: latitude,
@@ -317,7 +340,12 @@ function MapScreen({
     const map = mapRef.current
 
     // Kliknięcie markera nie dociera do mapy (bubblingMouseEvents: false), więc to tylko klik w puste miejsce.
-    function handleMapClick() {
+    function handleMapClick(event) {
+      if (navPickTarget && onNavigationPick) {
+        const { lat, lng } = event.latlng
+        onNavigationPick(lat, lng, 'Punkt na mapie')
+        return
+      }
       onSelectBar(null)
     }
 
@@ -325,7 +353,7 @@ function MapScreen({
     return () => {
       map.off('click', handleMapClick)
     }
-  }, [mapReady, onSelectBar])
+  }, [mapReady, navPickTarget, onNavigationPick, onSelectBar])
 
   useEffect(() => {
     let cancelled = false
@@ -373,7 +401,13 @@ function MapScreen({
       const point = [bar.latitude, bar.longitude]
       // title daje podpowiedź po najechaniu.
       L.marker(point, { icon: createBarMarkerIcon(mode, bar), title: bar.name })
-        .on('click', () => onSelectBar(bar.id))
+        .on('click', () => {
+          if (navPickTarget && onNavigationPickBar) {
+            onNavigationPickBar(bar)
+            return
+          }
+          onSelectBar(bar.id)
+        })
         .addTo(layer)
       boundsPoints.push(point)
     }
@@ -396,7 +430,16 @@ function MapScreen({
         markersLayerRef.current = null
       }
     }
-  }, [bars, mode, mapReady, onSelectBar, showOnlyFavorites, favoriteIds])
+  }, [
+    bars,
+    mode,
+    mapReady,
+    navPickTarget,
+    onNavigationPickBar,
+    onSelectBar,
+    showOnlyFavorites,
+    favoriteIds,
+  ])
 
   useEffect(() => {
     if (!mapReady) {
@@ -451,7 +494,10 @@ function MapScreen({
   }, [navigation?.route, mapReady])
 
   return (
-    <section className="map-screen" aria-label="Mapa">
+    <section
+      className={['map-screen', navPickTarget ? 'map-nav-pick' : ''].filter(Boolean).join(' ')}
+      aria-label="Mapa"
+    >
       {fetchError ? (
         <p className="map-fetch-error" role="alert">
           {fetchError}
@@ -555,21 +601,12 @@ function MapScreen({
           className="map-locate"
           type="button"
           aria-label="Pokaż swoją lokalizację"
-          title="Pokaż swoją lokalizację"
+          data-tooltip="Pokaż swoją lokalizację"
           aria-busy={geoPending || undefined}
           disabled={geoPending}
           onClick={handleLocate}
         >
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="3.2" fill="none" stroke="var(--bg-foam)" strokeWidth="2.5" />
-            <path
-              d="M12 3.5 V7.2 M12 16.8 V20.5 M3.5 12 H7.2 M16.8 12 H20.5"
-              fill="none"
-              stroke="var(--bg-foam)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-          </svg>
+          <LocateCrosshairIcon />
         </button>
       </div>
     </section>

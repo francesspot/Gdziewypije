@@ -1,8 +1,22 @@
 /**
- * Trasa samochodowa z publicznego serwera OSRM (bez klucza API).
+ * Trasa z publicznego OSRM.
+ * Samochód: router.project-osrm.org (profil driving).
+ * Pieszo: routing.openstreetmap.de/routed-foot — osobny graf chodników,
+ * bez jednokierunkówek i objazdów jak dla auta. Demo project-osrm.org
+ * na profilu foot zwraca tę samą geometrię co driving.
  */
-export async function fetchOsrmRoute(lat1, lon1, lat2, lon2) {
-  const url = `https://router.project-osrm.org/route/v1/driving/${lon1},${lat1};${lon2},${lat2}?overview=full&geometries=geojson`
+
+const CAR_ROUTE_BASE = 'https://router.project-osrm.org/route/v1/driving'
+const FOOT_ROUTE_BASE = 'https://routing.openstreetmap.de/routed-foot/route/v1/foot'
+
+function routeUrl(lat1, lon1, lat2, lon2, profile) {
+  const coords = `${lon1},${lat1};${lon2},${lat2}`
+  const base = profile === 'foot' || profile === 'walking' ? FOOT_ROUTE_BASE : CAR_ROUTE_BASE
+  return `${base}/${coords}?overview=full&geometries=geojson&steps=false`
+}
+
+async function requestOsrmProfile(lat1, lon1, lat2, lon2, profile) {
+  const url = routeUrl(lat1, lon1, lat2, lon2, profile)
 
   let response
   try {
@@ -34,4 +48,9 @@ export async function fetchOsrmRoute(lat1, lon1, lat2, lon2) {
     distanceM: route.distance,
     durationS: route.duration,
   }
+}
+
+export async function fetchOsrmRoute(lat1, lon1, lat2, lon2, profile = 'driving') {
+  const osrmProfile = profile === 'walking' ? 'foot' : profile
+  return requestOsrmProfile(lat1, lon1, lat2, lon2, osrmProfile)
 }

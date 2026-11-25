@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
+import { applyRouteToNavigation, computeDrivingRoute } from './computeDrivingRoute'
 import {
   addFavorite,
   clearSession,
@@ -26,10 +27,12 @@ const EMPTY_NAVIGATION = {
   route: null,
   distanceM: null,
   durationS: null,
+  routeProfile: 'driving',
 }
 
 function App() {
   const [navOpen, setNavOpen] = useState(false)
+  const [navPickTarget, setNavPickTarget] = useState(null)
   const [topOpen, setTopOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
   const [navigation, setNavigation] = useState(EMPTY_NAVIGATION)
@@ -47,6 +50,7 @@ function App() {
   const [adminOpen, setAdminOpen] = useState(false)
   // Stan na listę „w pobliżu” (zadanie 4); ustawiany po udanej lokalizacji na mapie
   const [userPosition, setUserPosition] = useState(null)
+  const navigationPanelRef = useRef(null)
   // Rola jest sprawdzana też w backendzie (403), tutaj decyduje tylko o pokazaniu panelu
   const isAdmin = user?.role === 'admin'
 
@@ -114,6 +118,12 @@ function App() {
     const timer = setTimeout(() => setFavoriteError(''), 4000)
     return () => clearTimeout(timer)
   }, [favoriteError])
+
+  useEffect(() => {
+    if (!navOpen) {
+      setNavPickTarget(null)
+    }
+  }, [navOpen])
 
   useEffect(() => {
     if (!navOpen || !userPosition) {
@@ -288,16 +298,6 @@ function App() {
     }
   }
 
-  function toggleNav() {
-    setNavOpen((wasOpen) => {
-      if (wasOpen) {
-        return false
-      }
-      closeOtherLeftPanels('nav')
-      return true
-    })
-  }
-
   function toggleTop() {
     setTopOpen((wasOpen) => {
       if (wasOpen) {
@@ -318,6 +318,16 @@ function App() {
     })
   }
 
+  function toggleNav() {
+    setNavOpen((wasOpen) => {
+      if (wasOpen) {
+        return false
+      }
+      closeOtherLeftPanels('nav')
+      return true
+    })
+  }
+
   function handleNavigationChange(updater) {
     setNavigation((prev) => (typeof updater === 'function' ? updater(prev) : updater))
   }
@@ -331,18 +341,40 @@ function App() {
     }))
   }
 
-  function handleNavigateToBar(bar) {
+  function handleNavigationPick(lat, lon, label = 'Punkt na mapie') {
+    if (!navPickTarget) {
+      return
+    }
+    const field = navPickTarget === 'origin' ? 'origin' : 'dest'
+    setNavigation((prev) => ({
+      ...prev,
+      [field]: { lat, lon, label },
+      route: null,
+      distanceM: null,
+      durationS: null,
+    }))
+    setNavPickTarget(null)
+  }
+
+  function handleNavigationPickBar(bar) {
+    if (!navPickTarget) {
+      return
+    }
+    handleNavigationPick(bar.latitude, bar.longitude, bar.name)
+  }
+
+  async function handleNavigateToBar(bar) {
+    const lat = bar.latitude ?? bar.lat
+    const lon = bar.longitude ?? bar.lon
     setSelectedBarId(null)
     closeOtherLeftPanels('nav')
     setNavOpen(true)
-    setNavigation((prev) => ({
-      ...prev,
-      dest: {
-        lat: bar.latitude,
-        lon: bar.longitude,
-        label: bar.name,
-      },
-      origin:
+
+    let origin = null
+    let routeProfile = 'driving'
+    setNavigation((prev) => {
+      routeProfile = prev.routeProfile ?? 'driving'
+      origin =
         prev.origin ??
         (userPosition
           ? {
@@ -350,14 +382,34 @@ function App() {
               lon: userPosition.lon,
               label: 'Moja lokalizacja',
             }
-          : null),
-      route: null,
-      distanceM: null,
-      durationS: null,
-    }))
-  }
+          : null)
+      return {
+        ...prev,
+        dest: {
+          lat,
+          lon,
+          label: bar.name,
+        },
+        origin,
+        route: null,
+        distanceM: null,
+        durationS: null,
+      }
+    })
 
-  const leftPanelOpen = navOpen || topOpen || listOpen
+    navigationPanelRef.current?.clearRouteError?.()
+
+    if (origin?.lat != null && origin?.lon != null && lat != null && lon != null) {
+      try {
+        const result = await computeDrivingRoute(origin.lat, origin.lon, lat, lon, routeProfile)
+        applyRouteToNavigation(setNavigation, result)
+        navigationPanelRef.current?.clearRouteError?.()
+      } catch (err) {
+        handleClearRoute()
+        navigationPanelRef.current?.reportRouteError?.(err.message)
+      }
+    }
+  }
 
   return (
     <div
@@ -366,7 +418,6 @@ function App() {
         navOpen ? 'app-nav-open' : '',
         topOpen ? 'app-top-open' : '',
         listOpen ? 'app-list-open' : '',
-        leftPanelOpen ? 'app-left-panel-open' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -391,6 +442,11 @@ function App() {
         barsVersion={barsVersion}
         loggedIn={user != null}
         navigation={navigation}
+        navOpen={navOpen}
+        navPickTarget={navPickTarget}
+        userPosition={userPosition}
+        onNavigationPick={handleNavigationPick}
+        onNavigationPickBar={handleNavigationPickBar}
         onSelectBar={setSelectedBarId}
         onToggleFavorite={toggleFavorite}
         onRate={handleRate}
@@ -416,12 +472,19 @@ function App() {
         </p>
       ) : null}
       <NavigationPanel
+        ref={navigationPanelRef}
         open={navOpen}
         barsVersion={barsVersion}
         navigation={navigation}
+        userPosition={userPosition}
+        navPickTarget={navPickTarget}
+        onNavPickTargetChange={setNavPickTarget}
         onNavigationChange={handleNavigationChange}
         onClearRoute={handleClearRoute}
-        onClose={() => setNavOpen(false)}
+        onClose={() => {
+          setNavPickTarget(null)
+          setNavOpen(false)
+        }}
       />
       <TopPanel
         open={topOpen}

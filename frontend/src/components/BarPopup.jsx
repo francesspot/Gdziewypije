@@ -255,6 +255,7 @@ function BarPopup({
                 type="button"
                 onClick={() =>
                   onNavigateToBar({
+                    id: bar.id,
                     name: bar.name,
                     latitude: bar.latitude,
                     longitude: bar.longitude,

@@ -1,4 +1,6 @@
 export { default as GpsPinIcon } from './GpsPinIcon'
+export { default as LocateCrosshairIcon } from './LocateCrosshairIcon'
+export { default as NavigationDirectionsIcon } from './NavigationDirectionsIcon'
 export { default as ListClipboardStarsIcon } from './ListClipboardStarsIcon'
 export { default as TopPodiumIcon } from './TopPodiumIcon'
 export { default as UserLocationArrowIcon } from './UserLocationArrowIcon'
