@@ -12,6 +12,7 @@ import {
   setSession,
 } from './api'
 import AccountPanel from './components/AccountPanel'
+import AdminPanel from './components/AdminPanel'
 import ListPanel from './components/ListPanel'
 import MapScreen from './components/MapScreen'
 import TopPanel from './components/TopPanel'
@@ -31,6 +32,9 @@ function App() {
   const [barsVersion, setBarsVersion] = useState(0)
   // Samo id w zależnościach, bo odświeżenie danych konta (getMe) daje nowy obiekt tego samego użytkownika
   const userId = user?.id ?? null
+  const [adminOpen, setAdminOpen] = useState(false)
+  // Rola jest sprawdzana też w backendzie (403), tutaj decyduje tylko o pokazaniu panelu
+  const isAdmin = user?.role === 'admin'
 
   useEffect(() => {
     // Token mógł wygasnąć albo konto zostało wyłączone, więc zapisana sesja jest sprawdzana w backendzie
@@ -108,6 +112,12 @@ function App() {
     setUser(null)
     setFavoriteIds([])
     setAccountOpen(false)
+    setAdminOpen(false)
+  }
+
+  function openAdmin() {
+    setAccountOpen(false)
+    setAdminOpen(true)
   }
 
   // Wygasły token w trakcie pracy: wylogowanie i okno logowania zamiast samego komunikatu
@@ -285,6 +295,12 @@ function App() {
         onClose={() => setAccountOpen(false)}
         onLoggedIn={handleLoggedIn}
         onLogout={handleLogout}
+        onOpenAdmin={openAdmin}
+      />
+      <AdminPanel
+        open={adminOpen && isAdmin}
+        onClose={() => setAdminOpen(false)}
+        onChanged={() => setBarsVersion((version) => version + 1)}
       />
     </div>
   )

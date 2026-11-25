@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import LoginForm from './LoginForm'
 import RegisterForm from './RegisterForm'
 
-function AccountPanel({ open, user, onClose, onLoggedIn, onLogout }) {
+function AccountPanel({ open, user, onClose, onLoggedIn, onLogout, onOpenAdmin }) {
   const [mode, setMode] = useState('login')
 
   useEffect(() => {
@@ -49,6 +49,12 @@ function AccountPanel({ open, user, onClose, onLoggedIn, onLogout }) {
             <p className="account-user">
               Zalogowano jako <strong>{user.display_name}</strong> ({user.email})
             </p>
+            {/* WNF.06: zwykły użytkownik nie widzi wejścia do panelu */}
+            {user.role === 'admin' ? (
+              <button className="account-submit account-admin" type="button" onClick={onOpenAdmin}>
+                Panel administratora
+              </button>
+            ) : null}
             <button className="account-submit account-logout" type="button" onClick={onLogout}>
               Wyloguj się
             </button>

@@ -77,6 +77,7 @@ function ListPanel({
     return () => {
       cancelled = true
     }
+    // Zmiana barsVersion po zapisie w panelu administratora pobiera bary od nowa
   }, [barsVersion])
 
   return (
