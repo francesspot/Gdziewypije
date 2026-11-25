@@ -15,6 +15,19 @@ function formatPrice(amount) {
   })} zł`
 }
 
+function formatRatingsCount(count) {
+  const n = Number(count) || 0
+  if (n === 1) {
+    return '1 ocena'
+  }
+  const mod10 = n % 10
+  const mod100 = n % 100
+  if (mod10 >= 2 && mod10 <= 4 && (mod100 < 12 || mod100 > 14)) {
+    return `${n} oceny`
+  }
+  return `${n} ocen`
+}
+
 const CONFIRM_MESSAGES = {
   confirm: 'Cena potwierdzona (+1 pkt)',
   change: 'Zapisano zgłoszenie zmiany ceny. Podaj nową cenę poniżej.',
@@ -142,19 +155,21 @@ function BarPopup({
   }
 
   return (
-    <section className="bar-popup" aria-label={bar ? `Bar ${bar.name}` : 'Szczegóły baru'}>
+    <section className="bar-popup" aria-labelledby="bar-popup-title">
       <header className="bar-popup-header">
-        <h2>{bar ? bar.name : 'Bar'}</h2>
-        {bar ? (
-          <FavoriteStar
-            barName={bar.name}
-            isFavorite={isFavorite}
-            onToggle={() => onToggleFavorite(barId)}
-          />
-        ) : null}
-        <button className="bar-popup-close" type="button" onClick={onClose} aria-label="Zamknij okienko baru">
-          ×
-        </button>
+        <h2 id="bar-popup-title">{bar ? bar.name : 'Bar'}</h2>
+        <div className="bar-popup-header-actions">
+          {bar ? (
+            <FavoriteStar
+              barName={bar.name}
+              isFavorite={isFavorite}
+              onToggle={() => onToggleFavorite(barId)}
+            />
+          ) : null}
+          <button className="bar-popup-close" type="button" onClick={onClose} aria-label="Zamknij okienko baru">
+            ×
+          </button>
+        </div>
       </header>
       {loading ? (
         <p className="bar-popup-status" role="status">
@@ -167,15 +182,15 @@ function BarPopup({
         </p>
       ) : null}
       {bar ? (
-        <p className="bar-popup-rating">
-          <span className="bar-popup-rating-value">Ocena: {formatRating(bar.avg_rating)}</span>
-          <span className="bar-popup-rating-count">liczba ocen: {bar.ratings_count}</span>
-        </p>
-      ) : null}
-      {bar ? (
-        <div className="bar-popup-your-rating">
-          <span>Twoja ocena:</span>
-          <RatingStars value={myRating} disabled={ratingSaving} onRate={handleRate} />
+        <div className="bar-popup-meta">
+          <p className="bar-popup-rating">
+            <span className="bar-popup-rating-value">{formatRating(bar.avg_rating)}</span>
+            <span className="bar-popup-rating-count">{formatRatingsCount(bar.ratings_count)}</span>
+          </p>
+          <div className="bar-popup-your-rating">
+            <span className="bar-popup-your-rating-label">Twoja ocena</span>
+            <RatingStars value={myRating} disabled={ratingSaving} onRate={handleRate} />
+          </div>
         </div>
       ) : null}
       {ratingError ? (
@@ -185,45 +200,50 @@ function BarPopup({
       ) : null}
       {bar ? (
         <>
-          <h3 className="bar-popup-prices-title">Ceny</h3>
-          {/* Pusta lista z backendu oznacza bar bez cen (WF.04). */}
-          {bar.prices.length === 0 ? (
-            <p className="bar-popup-no-prices">brak danych</p>
-          ) : (
-            <ul className="bar-popup-prices">
-              {bar.prices.map((price) => (
-                <li key={price.price_id}>
-                  <span className="bar-popup-drink">
-                    {price.drink_name} {price.volume_ml} ml
-                  </span>
-                  <span className="bar-popup-amount">{formatPrice(price.amount)}</span>
-                  {/* needs_verification liczy backend: brak potwierdzenia od 90 dni. */}
-                  {price.needs_verification ? (
-                    <span className="bar-popup-verify">do weryfikacji</span>
-                  ) : null}
-                  {/* PU.03: „zgadza się” odświeża datę ceny, „zmiana” zgłasza, że cena jest inna */}
-                  <span className="bar-popup-confirm">
-                    <button
-                      type="button"
-                      disabled={confirmingPriceId === price.price_id}
-                      onClick={() => handleConfirmPrice(price, 'confirm')}
-                      aria-label={`Cena ${price.drink_name} ${price.volume_ml} ml zgadza się`}
-                    >
-                      zgadza się
-                    </button>
-                    <button
-                      type="button"
-                      disabled={confirmingPriceId === price.price_id}
-                      onClick={() => handleConfirmPrice(price, 'change')}
-                      aria-label={`Cena ${price.drink_name} ${price.volume_ml} ml jest inna`}
-                    >
-                      zmiana
-                    </button>
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
+          <div className="bar-popup-prices-section">
+            <h3 className="bar-popup-prices-title">Ceny</h3>
+            {/* Pusta lista z backendu oznacza bar bez cen (WF.04). */}
+            {bar.prices.length === 0 ? (
+              <p className="bar-popup-no-prices">Brak zgłoszonych cen. Możesz dodać pierwszą poniżej.</p>
+            ) : (
+              <ul className="bar-popup-prices">
+                {bar.prices.map((price) => (
+                  <li key={price.price_id} className="bar-popup-price-row">
+                    <div className="bar-popup-price-main">
+                      <span className="bar-popup-drink">
+                        {price.drink_name}
+                        <span className="bar-popup-volume">{price.volume_ml} ml</span>
+                      </span>
+                      <span className="bar-popup-amount">{formatPrice(price.amount)}</span>
+                    </div>
+                    {/* needs_verification liczy backend: brak potwierdzenia od 90 dni. */}
+                    {price.needs_verification ? (
+                      <span className="bar-popup-verify">do weryfikacji</span>
+                    ) : null}
+                    {/* PU.03: „Zgadza się” odświeża datę ceny, „Inna cena” otwiera zgłoszenie */}
+                    <div className="bar-popup-confirm">
+                      <button
+                        type="button"
+                        disabled={confirmingPriceId === price.price_id}
+                        onClick={() => handleConfirmPrice(price, 'confirm')}
+                        aria-label={`Cena ${price.drink_name} ${price.volume_ml} ml zgadza się`}
+                      >
+                        Zgadza się
+                      </button>
+                      <button
+                        type="button"
+                        disabled={confirmingPriceId === price.price_id}
+                        onClick={() => handleConfirmPrice(price, 'change')}
+                        aria-label={`Cena ${price.drink_name} ${price.volume_ml} ml jest inna`}
+                      >
+                        Inna cena
+                      </button>
+                    </div>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </div>
           {priceMessage ? (
             <p className="bar-popup-message" role="status">
               {priceMessage}
@@ -244,14 +264,7 @@ function BarPopup({
           ) : (
             <div className="bar-popup-actions">
               <button
-                className="bar-popup-report"
-                type="button"
-                onClick={() => setReportForm({ drinkId: null })}
-              >
-                zgłoś cenę
-              </button>
-              <button
-                className="bar-popup-nav sketch-button"
+                className="bar-popup-nav"
                 type="button"
                 onClick={() =>
                   onNavigateToBar({
@@ -263,6 +276,13 @@ function BarPopup({
                 }
               >
                 Nawigacja
+              </button>
+              <button
+                className="bar-popup-report"
+                type="button"
+                onClick={() => setReportForm({ drinkId: null })}
+              >
+                Zgłoś cenę
               </button>
             </div>
           )}

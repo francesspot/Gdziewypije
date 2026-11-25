@@ -199,11 +199,11 @@
   bottom: 1rem;
   /* Nad panelami bocznymi, bo na wąskim ekranie lista zasłania całą mapę. */
   z-index: 11;
-  width: min(calc(100% - var(--panel-gap) * 2), 22rem);
+  width: min(calc(100% - var(--panel-gap) * 2), 24rem);
   /* Z otwartym formularzem ceny okienko przewija się zamiast wychodzić poza ekran telefonu */
   max-height: calc(100% - 2rem);
   overflow-y: auto;
-  padding: 0.8rem 1rem 1rem;
+  padding: 0.9rem 1rem 1.05rem;
   transform: translateX(-50%);
   border: 2.5px solid var(--ink-oak);
   border-radius: 22px 28px 20px 26px / 26px 20px 28px 22px;
@@ -215,28 +215,36 @@
 .bar-popup-header {
   display: flex;
   align-items: flex-start;
-  gap: 0.6rem;
+  gap: 0.7rem;
 }
 
 .bar-popup-header h2 {
   flex: 1;
+  min-width: 0;
   margin: 0;
   font-family: var(--font-hand);
-  font-size: 1.6rem;
+  font-size: 1.55rem;
   font-weight: 400;
   line-height: 1.15;
 }
 
+.bar-popup-header-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 0.3rem;
+}
+
 .bar-popup-close {
-  width: 2rem;
-  height: 2rem;
+  width: 2.15rem;
+  height: 2.15rem;
   flex-shrink: 0;
   padding: 0;
   border: 2px solid var(--ink-oak);
   border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   background: var(--bg-foam);
   color: var(--ink-oak);
-  font-size: 1.3rem;
+  font-size: 1.35rem;
   line-height: 1;
   cursor: pointer;
 }
@@ -254,28 +262,46 @@
   color: var(--accent-brick);
 }
 
+.bar-popup-meta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+  margin-top: 0.75rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px dashed color-mix(in srgb, var(--ink-oak) 35%, transparent);
+}
+
 .bar-popup-rating {
   display: flex;
   align-items: baseline;
-  gap: 0.6rem;
-  margin: 0.5rem 0 0;
+  gap: 0.5rem;
+  margin: 0;
 }
 
 .bar-popup-rating-value {
   font-family: var(--font-hand);
-  font-size: 1.55rem;
+  font-size: 1.7rem;
+  line-height: 1;
 }
 
 .bar-popup-rating-count {
-  font-size: 0.9rem;
+  font-size: 0.88rem;
+  color: color-mix(in srgb, var(--ink-oak) 72%, transparent);
 }
 
 .bar-popup-your-rating {
   display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  margin: 0.4rem 0 0;
-  font-size: 0.9rem;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.2rem;
+  margin: 0;
+}
+
+.bar-popup-your-rating-label {
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .rating-stars {
@@ -313,72 +339,107 @@
   fill: var(--accent-beer);
 }
 
+.bar-popup-prices-section {
+  margin-top: 0.75rem;
+}
+
 .bar-popup-prices-title {
-  margin: 0.8rem 0 0.35rem;
-  font-size: 1rem;
+  margin: 0 0 0.45rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
 }
 
 .bar-popup-no-prices {
   margin: 0;
+  font-size: 0.92rem;
+  color: color-mix(in srgb, var(--ink-oak) 78%, transparent);
 }
 
 /* Przy wielu napojach przewija się sama lista, a okienko nie zasłania całej mapy. */
 .bar-popup-prices {
-  max-height: 12rem;
+  max-height: 14rem;
   margin: 0;
   padding: 0;
   list-style: none;
   display: flex;
   flex-direction: column;
-  gap: 0.4rem;
+  gap: 0.5rem;
   overflow-y: auto;
 }
 
-.bar-popup-prices li {
+.bar-popup-price-row {
   display: flex;
-  flex-wrap: wrap;
-  align-items: center;
-  gap: 0.2rem 0.6rem;
+  flex-direction: column;
+  gap: 0.4rem;
+  padding: 0.5rem 0.6rem 0.55rem;
+  border: 2px solid var(--ink-oak);
+  border-radius: 16px 20px 14px 18px / 18px 14px 20px 16px;
+  background: var(--bg-coaster);
+}
+
+.bar-popup-price-main {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.75rem;
 }
 
 .bar-popup-drink {
-  flex: 1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0.35rem;
+  min-width: 0;
+  font-weight: 600;
+}
+
+.bar-popup-volume {
+  font-weight: 500;
+  font-size: 0.82rem;
+  color: color-mix(in srgb, var(--ink-oak) 70%, transparent);
 }
 
 .bar-popup-amount {
-  font-weight: 600;
+  flex-shrink: 0;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 
 .bar-popup-verify {
-  padding: 0.05rem 0.5rem;
+  align-self: flex-start;
+  padding: 0.1rem 0.5rem;
   border: 2px solid var(--accent-brick);
   border-radius: 999px;
   color: var(--accent-brick);
-  font-size: 0.8rem;
+  font-size: 0.75rem;
+  font-weight: 600;
   white-space: nowrap;
 }
 
-/* Przyciski w osobnej linii pod ceną, żeby na wąskim ekranie nie ściskały nazwy napoju */
 .bar-popup-confirm {
   display: flex;
-  flex-basis: 100%;
   gap: 0.4rem;
 }
 
 .bar-popup-confirm button {
-  padding: 0.1rem 0.6rem;
+  flex: 1;
+  min-height: 2.05rem;
+  padding: 0.25rem 0.5rem;
   border: 2px solid var(--ink-oak);
   border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   background: var(--bg-foam);
   color: var(--ink-oak);
   font-family: var(--font-sans);
-  font-size: 0.8rem;
+  font-size: 0.82rem;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .bar-popup-confirm button:hover {
-  background: var(--bg-coaster);
+  background: color-mix(in srgb, var(--bg-foam) 70%, var(--accent-beer));
 }
 
 .bar-popup-confirm button:disabled {
@@ -392,25 +453,44 @@
 
 .bar-popup-report,
 .price-report-cancel {
-  padding: 0.2rem 0.8rem;
+  padding: 0.45rem 0.8rem;
   border: 2px solid var(--ink-oak);
   border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
   background: var(--bg-foam);
   color: var(--ink-oak);
   font-family: var(--font-sans);
-  font-size: 0.9rem;
+  font-size: 0.95rem;
+  font-weight: 600;
   cursor: pointer;
 }
 
 .bar-popup-actions {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
   gap: 0.5rem;
-  margin-top: 0.7rem;
+  margin-top: 0.85rem;
 }
 
 .bar-popup-report {
   margin-top: 0;
+}
+
+.bar-popup-nav {
+  padding: 0.45rem 0.8rem;
+  border: 2.5px solid var(--ink-oak);
+  border-radius: 24px 18px 26px 16px / 16px 26px 14px 22px;
+  background: var(--accent-beer);
+  color: var(--ink-oak);
+  font-family: var(--font-sans);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ink-oak);
+}
+
+.bar-popup-nav:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink-oak);
 }
 
 .bar-popup-report:hover,
