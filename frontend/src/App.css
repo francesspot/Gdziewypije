@@ -126,6 +126,9 @@
   /* Nad panelami bocznymi, bo na wąskim ekranie lista zasłania całą mapę. */
   z-index: 11;
   width: min(calc(100% - var(--panel-gap) * 2), 22rem);
+  /* Z otwartym formularzem ceny okienko przewija się zamiast wychodzić poza ekran telefonu */
+  max-height: calc(100% - 2rem);
+  overflow-y: auto;
   padding: 0.8rem 1rem 1rem;
   transform: translateX(-50%);
   border: 2.5px solid var(--ink-oak);
@@ -280,6 +283,85 @@
   color: var(--accent-brick);
   font-size: 0.8rem;
   white-space: nowrap;
+}
+
+/* Przyciski w osobnej linii pod ceną, żeby na wąskim ekranie nie ściskały nazwy napoju */
+.bar-popup-confirm {
+  display: flex;
+  flex-basis: 100%;
+  gap: 0.4rem;
+}
+
+.bar-popup-confirm button {
+  padding: 0.1rem 0.6rem;
+  border: 2px solid var(--ink-oak);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  background: var(--bg-foam);
+  color: var(--ink-oak);
+  font-family: var(--font-sans);
+  font-size: 0.8rem;
+  cursor: pointer;
+}
+
+.bar-popup-confirm button:hover {
+  background: var(--bg-coaster);
+}
+
+.bar-popup-confirm button:disabled {
+  cursor: wait;
+  opacity: 0.6;
+}
+
+.bar-popup-message {
+  margin: 0.6rem 0 0;
+}
+
+.bar-popup-report,
+.price-report-cancel {
+  padding: 0.2rem 0.8rem;
+  border: 2px solid var(--ink-oak);
+  border-radius: 255px 15px 225px 15px / 15px 225px 15px 255px;
+  background: var(--bg-foam);
+  color: var(--ink-oak);
+  font-family: var(--font-sans);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.bar-popup-report {
+  margin-top: 0.7rem;
+}
+
+.bar-popup-report:hover,
+.price-report-cancel:hover {
+  background: var(--bg-coaster);
+}
+
+.price-report-form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-top: 0.7rem;
+}
+
+/* Lista napojów w tym samym stylu co pola tekstowe formularzy */
+.form-field select {
+  padding: 0.45rem 0.6rem;
+  border: 2.5px solid var(--ink-oak);
+  border-radius: 14px 18px 12px 16px / 16px 12px 18px 14px;
+  background: var(--bg-foam);
+  color: var(--ink-oak);
+  font-size: 1rem;
+}
+
+.form-field select[aria-invalid='true'] {
+  border-color: var(--accent-brick);
+}
+
+.price-report-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
 }
 
 .edge-button {

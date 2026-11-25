@@ -1,12 +1,12 @@
-# Ścieżki cen: aktualne ceny baru, zgłoszenie ceny (T2, PU.02) i potwierdzenie ceny (T3, PU.03).
+# Ścieżki cen: lista napojów, aktualne ceny baru, zgłoszenie ceny (T2, PU.02) i potwierdzenie ceny (T3, PU.03).
 import psycopg
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.api.dependencies import get_current_user
 from src.db.connection import get_connection
-from src.schemas.prices import PriceConfirmRequest, PriceReportRequest, PriceResponse
+from src.schemas.prices import DrinkResponse, PriceConfirmRequest, PriceReportRequest, PriceResponse
 
-# Bez wspólnego prefiksu, bo ścieżki zaczynają się od /bars albo od /prices
+# Bez wspólnego prefiksu, bo ścieżki zaczynają się od /drinks, /bars albo /prices
 router = APIRouter(tags=["prices"])
 
 
@@ -28,6 +28,22 @@ def fetch_current_price(conn: psycopg.Connection, price_id: int) -> dict | None:
         """,
         (price_id,),
     ).fetchone()
+
+
+@router.get(
+    "/drinks",
+    response_model=list[DrinkResponse],
+    summary="Lista napojów",
+    description=(
+        "Zwraca aktywne napoje, posortowane po nazwie i pojemności. "
+        "Służy do wyboru napoju w formularzu zgłoszenia ceny (PU.02). Nie wymaga logowania."
+    ),
+)
+def list_drinks(conn: psycopg.Connection = Depends(get_connection)) -> list[dict]:
+    # Tylko aktywne, bo dla wyłączonego napoju zgłoszenie ceny i tak zwraca 404
+    return conn.execute(
+        "SELECT id, name, category, volume_ml FROM drinks WHERE is_active ORDER BY name, volume_ml, id"
+    ).fetchall()
 
 
 @router.get(

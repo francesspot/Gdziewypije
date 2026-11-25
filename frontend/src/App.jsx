@@ -2,11 +2,13 @@ import { useEffect, useState } from 'react'
 import {
   addFavorite,
   clearSession,
+  confirmPrice,
   getFavorites,
   getMe,
   getSession,
   rateBar,
   removeFavorite,
+  reportPrice,
   setSession,
 } from './api'
 import AccountPanel from './components/AccountPanel'
@@ -179,6 +181,46 @@ function App() {
     return true
   }
 
+  // Zwraca false, gdy trzeba się zalogować; inne błędy (np. 409 przy drugim potwierdzeniu) pokazuje okienko baru
+  async function handleConfirmPrice(priceId, kind) {
+    if (!user) {
+      setAccountOpen(true)
+      return false
+    }
+    try {
+      await confirmPrice(priceId, kind)
+    } catch (err) {
+      if (err.status === 401) {
+        handleUnauthorized()
+        return false
+      }
+      throw err
+    }
+    // Potwierdzenie zmienia datę ceny, więc okienko pobiera ceny od nowa i etykieta „do weryfikacji” znika
+    setBarsVersion((version) => version + 1)
+    return true
+  }
+
+  // Zwraca false, gdy trzeba się zalogować; inne błędy (422, 404) pokazuje formularz ceny
+  async function handleReportPrice(barId, drinkId, amount) {
+    if (!user) {
+      setAccountOpen(true)
+      return false
+    }
+    try {
+      await reportPrice(barId, drinkId, amount)
+    } catch (err) {
+      if (err.status === 401) {
+        handleUnauthorized()
+        return false
+      }
+      throw err
+    }
+    // Nowa cena jest od razu aktualną ceną (v_current_prices), więc mapa i okienko pobierają bary od nowa
+    setBarsVersion((version) => version + 1)
+    return true
+  }
+
   return (
     <div
       className={[
@@ -205,6 +247,8 @@ function App() {
         onSelectBar={setSelectedBarId}
         onToggleFavorite={toggleFavorite}
         onRate={handleRate}
+        onConfirmPrice={handleConfirmPrice}
+        onReportPrice={handleReportPrice}
         onRequireLogin={() => setAccountOpen(true)}
         onOpenTop={() => setTopOpen(true)}
         onOpenList={() => setListOpen(true)}

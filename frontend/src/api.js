@@ -158,6 +158,27 @@ export function removeFavorite(barId) {
   return request(`/bars/${barId}/favorite`, { method: 'DELETE' })
 }
 
+// Aktywne napoje do wyboru w formularzu zgłoszenia ceny
+export function getDrinks() {
+  return request('/drinks')
+}
+
+// T2: zwraca zapisaną cenę w tym samym formacie co lista cen baru
+export function reportPrice(barId, drinkId, amount) {
+  return request(`/bars/${barId}/prices`, {
+    method: 'POST',
+    body: JSON.stringify({ drink_id: drinkId, amount }),
+  })
+}
+
+// T3: kind to 'confirm' (cena się zgadza) albo 'change' (cena jest inna), drugie potwierdzenie daje 409
+export function confirmPrice(priceId, kind) {
+  return request(`/prices/${priceId}/confirmations`, {
+    method: 'POST',
+    body: JSON.stringify({ kind }),
+  })
+}
+
 // Ścieżki administratora; backend odrzuca je z 403 dla zwykłego użytkownika
 export function getAdminBars() {
   return request('/admin/bars')
