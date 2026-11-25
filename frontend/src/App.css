@@ -1042,6 +1042,14 @@
   font-size: 1.55rem;
 }
 
+.bar-distance {
+  min-width: 3.6rem;
+  flex-shrink: 0;
+  text-align: right;
+  font-family: var(--font-hand);
+  font-size: 1.2rem;
+}
+
 .account-button {
   position: absolute;
   top: calc(var(--panel-gap) + 1rem);

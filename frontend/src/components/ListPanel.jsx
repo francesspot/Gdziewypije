@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getBars, getRanking } from '../api'
+import { distanceMeters, formatDistanceMeters } from '../geoDistance'
 import CloseArrow from './CloseArrow'
 import FavoriteStar from './FavoriteStar'
 
@@ -7,7 +8,26 @@ function formatRating(avgRating) {
   return avgRating == null ? '–' : avgRating.toFixed(1)
 }
 
-function BarListItem({ bar, isFavorite, onToggleFavorite, onSelectBar }) {
+function barDistanceLabel(bar, userPosition) {
+  if (
+    !userPosition ||
+    bar.latitude == null ||
+    bar.longitude == null ||
+    !Number.isFinite(bar.latitude) ||
+    !Number.isFinite(bar.longitude)
+  ) {
+    return '-'
+  }
+  const m = distanceMeters(
+    userPosition.lat,
+    userPosition.lon,
+    bar.latitude,
+    bar.longitude,
+  )
+  return formatDistanceMeters(m)
+}
+
+function BarListItem({ bar, isFavorite, onToggleFavorite, onSelectBar, distanceLabel }) {
   return (
     <li>
       {/* Pusta komórka bez miejsca wyrównuje nazwy w obu sekcjach */}
@@ -21,6 +41,7 @@ function BarListItem({ bar, isFavorite, onToggleFavorite, onSelectBar }) {
         {bar.name}
       </button>
       <span className="rating">{formatRating(bar.avg_rating)}</span>
+      <span className="bar-distance">{distanceLabel}</span>
     </li>
   )
 }
@@ -29,6 +50,7 @@ function ListPanel({
   open,
   barsVersion,
   favoriteIds,
+  userPosition,
   onToggleFavorite,
   onSelectBar,
   onClose,
@@ -170,6 +192,7 @@ function ListPanel({
                 isFavorite={favoriteIds.includes(bar.id)}
                 onToggleFavorite={onToggleFavorite}
                 onSelectBar={onSelectBar}
+                distanceLabel={barDistanceLabel(bar, userPosition)}
               />
             ))}
           </ul>
@@ -185,6 +208,7 @@ function ListPanel({
                   isFavorite={favoriteIds.includes(bar.id)}
                   onToggleFavorite={onToggleFavorite}
                   onSelectBar={onSelectBar}
+                  distanceLabel={barDistanceLabel(bar, userPosition)}
                 />
               ))}
             </ul>

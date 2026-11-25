@@ -310,6 +310,7 @@ function App() {
         open={listOpen}
         barsVersion={barsVersion}
         favoriteIds={favoriteIds}
+        userPosition={userPosition}
         onToggleFavorite={toggleFavorite}
         onSelectBar={setSelectedBarId}
         onClose={() => setListOpen(false)}
