@@ -6,6 +6,8 @@
   --bg-cellar: #2b211c;
   --accent-brick: #b84a39;
   --accent-magenta: #c026d3;
+  /* Niebieski tylko dla markera użytkownika, żeby odróżniał się od markerów barów */
+  --accent-location: #22c8ff;
   --ease-sketch: cubic-bezier(0.2, 0, 0, 1);
   --font-hand: 'Patrick Hand', cursive;
   --font-sans: 'Inter', sans-serif;

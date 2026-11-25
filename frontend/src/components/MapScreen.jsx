@@ -15,7 +15,8 @@ const INITIAL_ZOOM = 13
 const LOCATE_ZOOM = 15
 const USER_MARKER_SIZE = 64
 const NEARBY_RADIUS_M = 2000
-const ROUTE_COLOR = '#c026d3'
+// Leaflet wpisuje kolor do atrybutu stroke linii SVG, a tam zmienna CSS też działa
+const ROUTE_COLOR = 'var(--accent-magenta)'
 
 // Vite nie serwuje domyślnych ścieżek ikon Leaflet.
 delete L.Icon.Default.prototype._getIconUrl
