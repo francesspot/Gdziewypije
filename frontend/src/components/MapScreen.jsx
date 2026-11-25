@@ -144,7 +144,6 @@ function MapScreen({
   navOpen,
   navPickTarget,
   onNavigationPick,
-  onNavigationPickBar,
   onNavigateToBar,
 }) {
   const mapContainerRef = useRef(null)
@@ -395,8 +394,8 @@ function MapScreen({
       // title daje podpowiedź po najechaniu.
       L.marker(point, { icon: createBarMarkerIcon(mode, bar), title: bar.name })
         .on('click', () => {
-          if (navPickTarget && onNavigationPickBar) {
-            onNavigationPickBar(bar)
+          if (navPickTarget && onNavigationPick) {
+            onNavigationPick(bar.latitude, bar.longitude, bar.name)
             return
           }
           onSelectBar(bar.id)
@@ -428,7 +427,7 @@ function MapScreen({
     mode,
     mapReady,
     navPickTarget,
-    onNavigationPickBar,
+    onNavigationPick,
     onSelectBar,
     showOnlyFavorites,
     favoriteIds,

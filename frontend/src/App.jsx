@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
 import { applyRouteToNavigation, computeDrivingRoute } from './computeDrivingRoute'
 import {
   addFavorite,
@@ -327,27 +327,25 @@ function App() {
     }))
   }
 
-  function handleNavigationPick(lat, lon, label = 'Punkt na mapie') {
-    if (!navPickTarget) {
-      return
-    }
-    const field = navPickTarget === 'origin' ? 'origin' : 'dest'
-    setNavigation((prev) => ({
-      ...prev,
-      [field]: { lat, lon, label },
-      route: null,
-      distanceM: null,
-      durationS: null,
-    }))
-    setNavPickTarget(null)
-  }
-
-  function handleNavigationPickBar(bar) {
-    if (!navPickTarget) {
-      return
-    }
-    handleNavigationPick(bar.latitude, bar.longitude, bar.name)
-  }
+  // useCallback, bo funkcja jest w zależnościach efektów mapy: nowa funkcja przy każdym renderze App
+  // przebudowywałaby wszystkie markery, np. przy każdym znaku wpisanym w polu celu.
+  const handleNavigationPick = useCallback(
+    (lat, lon, label = 'Punkt na mapie') => {
+      if (!navPickTarget) {
+        return
+      }
+      const field = navPickTarget === 'origin' ? 'origin' : 'dest'
+      setNavigation((prev) => ({
+        ...prev,
+        [field]: { lat, lon, label },
+        route: null,
+        distanceM: null,
+        durationS: null,
+      }))
+      setNavPickTarget(null)
+    },
+    [navPickTarget],
+  )
 
   async function handleNavigateToBar(bar) {
     const lat = bar.latitude ?? bar.lat
@@ -429,7 +427,6 @@ function App() {
         navOpen={navOpen}
         navPickTarget={navPickTarget}
         onNavigationPick={handleNavigationPick}
-        onNavigationPickBar={handleNavigationPickBar}
         onSelectBar={setSelectedBarId}
         onToggleFavorite={toggleFavorite}
         onRate={handleRate}
