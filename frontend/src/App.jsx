@@ -298,34 +298,20 @@ function App() {
     }
   }
 
+  // Otwarty jest najwyżej jeden panel po lewej, więc zamknięcie pozostałych nic nie psuje także przy zamykaniu.
   function toggleTop() {
-    setTopOpen((wasOpen) => {
-      if (wasOpen) {
-        return false
-      }
-      closeOtherLeftPanels('top')
-      return true
-    })
+    closeOtherLeftPanels('top')
+    setTopOpen(!topOpen)
   }
 
   function toggleList() {
-    setListOpen((wasOpen) => {
-      if (wasOpen) {
-        return false
-      }
-      closeOtherLeftPanels('list')
-      return true
-    })
+    closeOtherLeftPanels('list')
+    setListOpen(!listOpen)
   }
 
   function toggleNav() {
-    setNavOpen((wasOpen) => {
-      if (wasOpen) {
-        return false
-      }
-      closeOtherLeftPanels('nav')
-      return true
-    })
+    closeOtherLeftPanels('nav')
+    setNavOpen(!navOpen)
   }
 
   function handleNavigationChange(updater) {
@@ -370,32 +356,30 @@ function App() {
     closeOtherLeftPanels('nav')
     setNavOpen(true)
 
-    let origin = null
-    let routeProfile = 'driving'
-    setNavigation((prev) => {
-      routeProfile = prev.routeProfile ?? 'driving'
-      origin =
-        prev.origin ??
-        (userPosition
-          ? {
-              lat: userPosition.lat,
-              lon: userPosition.lon,
-              label: 'Moja lokalizacja',
-            }
-          : null)
-      return {
-        ...prev,
-        dest: {
-          lat,
-          lon,
-          label: bar.name,
-        },
-        origin,
-        route: null,
-        distanceM: null,
-        durationS: null,
-      }
-    })
+    // Start i profil liczone z bieżącego stanu przed setNavigation, bo React wykonuje funkcję
+    // przekazaną do setState dopiero przy renderze i zmienne ustawiane w niej byłyby jeszcze puste.
+    const routeProfile = navigation.routeProfile ?? 'driving'
+    const origin =
+      navigation.origin ??
+      (userPosition
+        ? {
+            lat: userPosition.lat,
+            lon: userPosition.lon,
+            label: 'Moja lokalizacja',
+          }
+        : null)
+    setNavigation((prev) => ({
+      ...prev,
+      dest: {
+        lat,
+        lon,
+        label: bar.name,
+      },
+      origin,
+      route: null,
+      distanceM: null,
+      durationS: null,
+    }))
 
     navigationPanelRef.current?.clearRouteError?.()
 

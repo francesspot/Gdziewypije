@@ -241,20 +241,17 @@ const NavigationPanel = forwardRef(function NavigationPanel(
     destEditingRef.current = false
     setValidationError('')
     setRouteError('')
-    onNavigationChange((prev) => {
-      const nextOrigin = prev.dest
-      const nextDest = prev.origin
-      setOriginText(nextOrigin?.label ?? '')
-      setDestText(nextDest?.label ?? '')
-      return {
-        ...prev,
-        origin: nextOrigin,
-        dest: nextDest,
-        route: null,
-        distanceM: null,
-        durationS: null,
-      }
-    })
+    // Teksty pól ustawiane poza funkcją przekazaną do setState, bo ta funkcja nie powinna zmieniać innego stanu.
+    setOriginText(navigation.dest?.label ?? '')
+    setDestText(navigation.origin?.label ?? '')
+    onNavigationChange((prev) => ({
+      ...prev,
+      origin: prev.dest,
+      dest: prev.origin,
+      route: null,
+      distanceM: null,
+      durationS: null,
+    }))
   }
 
   async function runRouteComputation(origin, dest, profileOverride) {
