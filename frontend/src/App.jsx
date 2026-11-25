@@ -13,6 +13,7 @@ import {
 } from './api'
 import AccountPanel from './components/AccountPanel'
 import AdminPanel from './components/AdminPanel'
+import LeftToolRail from './components/LeftToolRail'
 import ListPanel from './components/ListPanel'
 import MapScreen from './components/MapScreen'
 import TopPanel from './components/TopPanel'
@@ -221,12 +222,35 @@ function App() {
     return true
   }
 
+  function toggleTop() {
+    setTopOpen((wasOpen) => {
+      if (wasOpen) {
+        return false
+      }
+      setListOpen(false)
+      return true
+    })
+  }
+
+  function toggleList() {
+    setListOpen((wasOpen) => {
+      if (wasOpen) {
+        return false
+      }
+      setTopOpen(false)
+      return true
+    })
+  }
+
+  const leftPanelOpen = topOpen || listOpen
+
   return (
     <div
       className={[
         'app',
         topOpen ? 'app-top-open' : '',
         listOpen ? 'app-list-open' : '',
+        leftPanelOpen ? 'app-left-panel-open' : '',
       ]
         .filter(Boolean)
         .join(' ')}
@@ -237,9 +261,13 @@ function App() {
           <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.1" />
         </filter>
       </svg>
-      <MapScreen
+      <LeftToolRail
         topOpen={topOpen}
         listOpen={listOpen}
+        onToggleTop={toggleTop}
+        onToggleList={toggleList}
+      />
+      <MapScreen
         selectedBarId={selectedBarId}
         favoriteIds={favoriteIds}
         barsVersion={barsVersion}
@@ -250,8 +278,6 @@ function App() {
         onConfirmPrice={handleConfirmPrice}
         onReportPrice={handleReportPrice}
         onRequireLogin={() => setAccountOpen(true)}
-        onOpenTop={() => setTopOpen(true)}
-        onOpenList={() => setListOpen(true)}
       />
       {!accountOpen ? (
         <button

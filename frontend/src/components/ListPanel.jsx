@@ -82,12 +82,16 @@ function ListPanel({
 
   return (
     <aside
-      className={['side-panel', 'side-panel-right', open ? 'is-open' : ''].filter(Boolean).join(' ')}
+      className={['side-panel', 'side-panel-left', open ? 'is-open' : ''].filter(Boolean).join(' ')}
       aria-label="Lista barów"
       aria-hidden={!open}
       inert={!open}
     >
       <header className="list-header">
+        <button className="close-button" type="button" onClick={onClose} aria-label="Zamknij listę">
+          <CloseArrow direction="left" />
+        </button>
+        <h1>Lista</h1>
         <button
           className="panel-switch-button"
           type="button"
@@ -95,10 +99,6 @@ function ListPanel({
           aria-label="Przejdź do TOP"
         >
           TOP
-        </button>
-        <h1>Lista</h1>
-        <button className="close-button" type="button" onClick={onClose} aria-label="Zamknij listę">
-          <CloseArrow direction="right" />
         </button>
       </header>
       <label className="search">

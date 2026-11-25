@@ -93,8 +93,6 @@ function createBarMarkerIcon(mode, bar) {
 }
 
 function MapScreen({
-  topOpen,
-  listOpen,
   selectedBarId,
   favoriteIds,
   barsVersion,
@@ -105,8 +103,6 @@ function MapScreen({
   onConfirmPrice,
   onReportPrice,
   onRequireLogin,
-  onOpenTop,
-  onOpenList,
 }) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
@@ -271,16 +267,6 @@ function MapScreen({
           onReportPrice={onReportPrice}
           onClose={() => onSelectBar(null)}
         />
-      ) : null}
-      {!topOpen ? (
-        <button className="edge-button edge-button-left" type="button" onClick={onOpenTop}>
-          TOP
-        </button>
-      ) : null}
-      {!listOpen ? (
-        <button className="edge-button edge-button-right" type="button" onClick={onOpenList}>
-          Lista
-        </button>
       ) : null}
       <div className="map-controls" aria-label="Kontrolki mapy">
         <div className="map-mode-toggle" role="group" aria-label="Cena lub ocena">

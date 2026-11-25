@@ -11,11 +11,67 @@
   height: 0;
 }
 
+.left-tool-rail {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 15;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: 0.5rem;
+  width: var(--rail-width);
+  padding: calc(var(--panel-gap) + 0.5rem) 0.35rem;
+  border-right: 2.5px solid var(--ink-oak);
+  background: var(--bg-foam);
+  box-shadow: 2px 0 0 var(--ink-oak);
+  filter: url(#sketch);
+}
+
+.left-tool-rail-btn {
+  width: 100%;
+  padding: 0.45rem 0.15rem;
+  border: 2.5px solid var(--ink-oak);
+  border-radius: 14px 18px 12px 16px / 16px 12px 18px 14px;
+  background: var(--bg-cellar);
+  color: var(--bg-foam);
+  font-family: var(--font-hand);
+  font-size: 0.95rem;
+  line-height: 1.1;
+  cursor: pointer;
+  box-shadow: 2px 2px 0 var(--ink-oak);
+  transition:
+    transform 120ms var(--ease-sketch),
+    box-shadow 120ms var(--ease-sketch),
+    background 120ms var(--ease-sketch),
+    color 120ms var(--ease-sketch);
+}
+
+.left-tool-rail-btn:hover {
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 var(--ink-oak);
+}
+
+.left-tool-rail-btn.is-active {
+  background: var(--accent-beer);
+  color: var(--ink-oak);
+}
+
 .map-screen {
   position: absolute;
-  inset: 0;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  left: var(--rail-width);
   z-index: 0;
   background: var(--bg-cellar);
+  transition: left 200ms var(--ease-sketch), width 200ms var(--ease-sketch);
+}
+
+.app-left-panel-open .map-screen {
+  left: calc(var(--rail-width) + var(--panel-width));
+  width: calc(100% - var(--rail-width) - var(--panel-width));
 }
 
 .map-canvas {
@@ -364,42 +420,6 @@
   gap: 0.6rem;
 }
 
-.edge-button {
-  position: absolute;
-  /* Taki sam offset jak przyciski strzałek w nagłówkach paneli. */
-  top: calc(var(--panel-gap) + 1rem);
-  z-index: 4;
-  padding: 0.35rem 0.95rem;
-  border: 2.5px solid var(--ink-oak);
-  background: var(--bg-foam);
-  color: var(--ink-oak);
-  font-family: var(--font-sans);
-  font-size: 1.25rem;
-  cursor: pointer;
-  box-shadow: 2px 2px 0px var(--ink-oak);
-  filter: url(#sketch);
-  transition:
-    transform 120ms var(--ease-sketch),
-    box-shadow 120ms var(--ease-sketch);
-}
-
-.edge-button:hover {
-  transform: translate(-1px, -1px);
-  box-shadow: 3px 3px 0px var(--ink-oak);
-}
-
-.edge-button-left {
-  left: calc(var(--panel-gap) + 1.2rem);
-  border-radius: 18px 28px 16px 24px / 22px 16px 26px 14px;
-}
-
-.edge-button-right {
-  /* Wyśrodkowanie jak close-button w list-header (min-height: 3rem). */
-  top: calc(var(--panel-gap) + 1rem + (3rem - 2.875rem) / 2);
-  right: calc(var(--panel-gap) + 1.2rem);
-  border-radius: 26px 16px 24px 18px / 14px 24px 16px 22px;
-}
-
 .map-mode-toggle {
   display: flex;
   flex-direction: row;
@@ -421,13 +441,9 @@
   gap: 0.45rem;
 }
 
-.app-list-open .map-controls {
-  right: calc(var(--panel-width) + var(--panel-gap) + 24px);
-}
-
-/* Otwarty panel TOP zasłoniłby atrybucję OpenStreetMap (WNF.09). */
-.app-top-open .leaflet-bottom.leaflet-left {
-  left: calc(var(--panel-width) + var(--panel-gap) * 2);
+/* Otwarty panel z lewej zasłoniłby atrybucję OpenStreetMap (WNF.09). */
+.app-left-panel-open .leaflet-bottom.leaflet-left {
+  left: calc(var(--rail-width) + var(--panel-width) + var(--panel-gap));
 }
 
 .map-controls button {
@@ -554,20 +570,11 @@
 }
 
 .side-panel-left {
-  left: var(--panel-gap);
+  left: var(--rail-width);
   transform: translateX(-105%);
 }
 
 .side-panel-left.is-open {
-  transform: translateX(0);
-}
-
-.side-panel-right {
-  right: var(--panel-gap);
-  transform: translateX(105%);
-}
-
-.side-panel-right.is-open {
   transform: translateX(0);
 }
 
@@ -621,12 +628,12 @@
   border-radius: 999px;
 }
 
-.list-header .panel-switch-button {
+.list-header > .close-button {
   grid-column: 1;
   justify-self: start;
 }
 
-.list-header > .close-button {
+.list-header .panel-switch-button {
   grid-column: 3;
   justify-self: end;
 }
@@ -1273,9 +1280,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .edge-button,
+  .left-tool-rail-btn,
   .account-button,
   .map-controls button,
+  .map-screen,
   .panel-switch-button,
   .side-panel,
   .beer-stack-column {
@@ -1303,23 +1311,14 @@
   }
 
   .side-panel {
-    width: calc(100% - (var(--panel-gap) * 2));
-    left: var(--panel-gap);
+    width: calc(100% - var(--rail-width) - var(--panel-gap));
+    left: var(--rail-width);
     right: var(--panel-gap);
   }
 
-  .app-top-open.app-list-open .side-panel-left {
-    width: calc(60% - var(--panel-gap) - 6px);
-    right: auto;
-  }
-
-  .app-top-open.app-list-open .side-panel-right {
-    width: calc(40% - var(--panel-gap) - 6px);
-    left: auto;
-  }
-
-  .app-list-open .map-controls {
-    right: var(--panel-gap);
+  .app-left-panel-open .map-screen {
+    left: var(--rail-width);
+    width: calc(100% - var(--rail-width));
   }
 }
 
