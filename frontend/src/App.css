@@ -160,7 +160,8 @@
 .map-fetch-error,
 .favorite-error,
 .map-status,
-.map-geo-alert {
+.map-geo-alert,
+.map-nearby-alert {
   position: absolute;
   top: calc(var(--panel-gap) + 1rem + 3.25rem);
   left: 50%;
@@ -185,6 +186,11 @@
 .map-status,
 .map-geo-alert {
   color: var(--ink-oak);
+}
+
+.map-nearby-alert {
+  top: calc(var(--panel-gap) + 1rem + 5.75rem);
+  color: var(--accent-brick);
 }
 
 /* Nad panelami i okienkiem baru, bo gwiazdka ulubionych jest na liście */
@@ -468,6 +474,88 @@
   overflow: hidden;
 }
 
+.nearby-panel {
+  position: absolute;
+  top: var(--panel-gap);
+  right: calc(var(--panel-gap) + 3.25rem);
+  bottom: 5.5rem;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  width: min(17.5rem, 42vw);
+  max-height: calc(100% - var(--panel-gap) - 5.5rem);
+  padding: 0.85rem 1rem 1rem;
+  border: 2.5px solid var(--ink-oak);
+  border-radius: 22px 28px 24px 26px / 26px 24px 28px 22px;
+  background: var(--bg-foam);
+  box-shadow: 3px 3px 0 var(--ink-oak);
+  filter: url(#sketch);
+  overflow: hidden;
+  pointer-events: auto;
+}
+
+.nearby-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.nearby-title {
+  margin: 0;
+  font-family: var(--font-serif);
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--ink-oak);
+}
+
+.nearby-empty {
+  margin: 0.25rem 0 0;
+  font-size: 0.95rem;
+  color: var(--ink-oak);
+  opacity: 0.85;
+}
+
+.nearby-list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+  overflow-y: auto;
+  min-height: 0;
+  flex: 1;
+}
+
+.nearby-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.65rem;
+  padding: 0.45rem 0;
+  border-bottom: 1.5px dashed color-mix(in srgb, var(--ink-oak) 35%, transparent);
+  font-family: var(--font-sans);
+  font-size: 0.92rem;
+}
+
+.nearby-row:last-child {
+  border-bottom: none;
+}
+
+.nearby-name {
+  min-width: 0;
+  flex: 1;
+  text-align: left;
+  color: var(--ink-oak);
+}
+
+.nearby-distance {
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--ink-oak);
+  opacity: 0.8;
+}
+
 .map-controls {
   position: absolute;
   right: var(--panel-gap);
@@ -591,6 +679,11 @@
 .map-controls button:disabled:hover {
   transform: none;
   box-shadow: 2px 2px 0px var(--ink-oak);
+}
+
+.leaflet-marker-icon.user-location {
+  background: transparent;
+  border: none;
 }
 
 .user-location-marker {

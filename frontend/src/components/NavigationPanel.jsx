@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { getBars } from '../api'
 import { fetchOsrmRoute } from '../fetchOsrmRoute'
 import CloseArrow from './CloseArrow'
@@ -51,6 +51,8 @@ function NavigationPanel({
   const [routeError, setRouteError] = useState('')
   const [validationError, setValidationError] = useState('')
   const [routePending, setRoutePending] = useState(false)
+  const destEditingRef = useRef(false)
+  const wasOpenRef = useRef(false)
 
   useEffect(() => {
     if (!open) {
@@ -75,13 +77,24 @@ function NavigationPanel({
 
   useEffect(() => {
     if (!open) {
+      wasOpenRef.current = false
+      destEditingRef.current = false
       return
     }
+
+    const justOpened = !wasOpenRef.current
+    wasOpenRef.current = true
+
     setOriginText(navigation.origin?.label ?? '')
-    setDestText(navigation.dest?.label ?? '')
+
+    // Pole celu synchronizuje się przy otwarciu panelu lub po wyborze z mapy, nie przy każdym klawiszu.
+    if (justOpened || !destEditingRef.current) {
+      setDestText(navigation.dest?.label ?? '')
+    }
   }, [open, navigation.origin, navigation.dest])
 
   function handleDestInput(value) {
+    destEditingRef.current = true
     setDestText(value)
     setValidationError('')
     const trimmed = value.trim()
@@ -107,6 +120,7 @@ function NavigationPanel({
   }
 
   function pickDestBar(bar) {
+    destEditingRef.current = false
     setDestText(bar.name)
     setDestSuggestions([])
     setValidationError('')
@@ -120,6 +134,7 @@ function NavigationPanel({
   }
 
   function handleSwap() {
+    destEditingRef.current = false
     setValidationError('')
     setRouteError('')
     onNavigationChange((prev) => {

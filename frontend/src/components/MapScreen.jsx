@@ -4,14 +4,16 @@ import 'leaflet/dist/leaflet.css'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
-import { getBars } from '../api'
+import { getBars, getNearby } from '../api'
 import BarPopup from './BarPopup'
+import NearbyList from './NearbyList'
 import { USER_LOCATION_ARROW_MARKUP } from './icons/UserLocationArrowIcon'
 
 const WROCLAW_CENTER = [51.11, 17.04]
 const INITIAL_ZOOM = 13
 const USER_LOCATION_ZOOM = 15
 const USER_MARKER_SIZE = 64
+const NEARBY_RADIUS_M = 2000
 const ROUTE_COLOR = '#c026d3'
 
 // Vite nie serwuje domyślnych ścieżek ikon Leaflet.
@@ -118,7 +120,7 @@ function createUserLocationIcon(headingDeg) {
   const rotation = Number.isFinite(headingDeg) ? headingDeg : 0
   const html = `<div class="user-location-marker" role="img" aria-label="Twoja lokalizacja"><div class="user-location-halo"></div><div class="user-location-arrow" style="transform: rotate(${rotation}deg)">${USER_LOCATION_ARROW_MARKUP}</div></div>`
   return L.divIcon({
-    className: '',
+    className: 'user-location',
     html,
     iconSize: [USER_MARKER_SIZE, USER_MARKER_SIZE],
     iconAnchor: [USER_MARKER_SIZE / 2, USER_MARKER_SIZE / 2],
@@ -155,6 +157,9 @@ function MapScreen({
   const [onlyFavorites, setOnlyFavorites] = useState(false)
   const [geoPending, setGeoPending] = useState(false)
   const [geoAlert, setGeoAlert] = useState('')
+  const [nearbyOpen, setNearbyOpen] = useState(false)
+  const [nearbyBars, setNearbyBars] = useState([])
+  const [nearbyError, setNearbyError] = useState('')
   // Po wylogowaniu filtr nie działa, żeby mapa nie została pusta; po ponownym zalogowaniu wraca
   const showOnlyFavorites = onlyFavorites && loggedIn
   const noFavoritesVisible =
@@ -206,12 +211,27 @@ function MapScreen({
     return () => clearTimeout(timer)
   }, [geoAlert])
 
+  useEffect(() => {
+    if (!nearbyError) {
+      return
+    }
+    const timer = setTimeout(() => setNearbyError(''), 5000)
+    return () => clearTimeout(timer)
+  }, [nearbyError])
+
+  function clearNearbyList() {
+    setNearbyOpen(false)
+    setNearbyBars([])
+    setNearbyError('')
+  }
+
   function clearUserMarker() {
     const map = mapRef.current
     if (userMarkerRef.current && map) {
       map.removeLayer(userMarkerRef.current)
       userMarkerRef.current = null
     }
+    clearNearbyList()
     onUserLocationChange?.(null)
   }
 
@@ -222,6 +242,7 @@ function MapScreen({
 
     clearUserMarker()
     setGeoAlert('')
+    setNearbyError('')
     geoPendingRef.current = true
     setGeoPending(true)
 
@@ -251,6 +272,22 @@ function MapScreen({
           lon: longitude,
           heading: Number.isFinite(heading) ? heading : null,
         })
+
+        getNearby(latitude, longitude, NEARBY_RADIUS_M)
+          .then((nearby) => {
+            if (!mapRef.current) {
+              return
+            }
+            setNearbyBars(nearby)
+            setNearbyOpen(true)
+            setNearbyError('')
+          })
+          .catch((err) => {
+            if (!mapRef.current) {
+              return
+            }
+            setNearbyError(err.message || 'Nie udało się pobrać barów w pobliżu.')
+          })
       },
       (error) => {
         geoPendingRef.current = false
@@ -430,7 +467,13 @@ function MapScreen({
           {geoAlert}
         </p>
       ) : null}
+      {nearbyError ? (
+        <p className="map-nearby-alert" role="status">
+          {nearbyError}
+        </p>
+      ) : null}
       <div className="map-canvas" ref={mapContainerRef} />
+      <NearbyList open={nearbyOpen} bars={nearbyBars} onClose={() => setNearbyOpen(false)} />
       {selectedBarId != null ? (
         <BarPopup
           key={selectedBarId}
