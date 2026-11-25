@@ -141,7 +141,6 @@ function MapScreen({
   onRequireLogin,
   onUserLocationChange,
   navigation,
-  navOpen,
   navPickTarget,
   onNavigationPick,
   onNavigateToBar,
