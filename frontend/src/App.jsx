@@ -1,4 +1,5 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+import { fetchOsrmRoute } from './fetchOsrmRoute'
 import {
   addFavorite,
   clearSession,
@@ -14,14 +15,28 @@ import {
 } from './api'
 import AccountPanel from './components/AccountPanel'
 import AdminPanel from './components/AdminPanel'
+import LeftToolRail from './components/LeftToolRail'
 import ListPanel from './components/ListPanel'
 import MapScreen from './components/MapScreen'
+import NavigationPanel from './components/NavigationPanel'
 import TopPanel from './components/TopPanel'
 import './App.css'
 
+const EMPTY_NAVIGATION = {
+  origin: null,
+  dest: null,
+  route: null,
+  distanceM: null,
+  durationS: null,
+  routeProfile: 'driving',
+}
+
 function App() {
+  const [navOpen, setNavOpen] = useState(false)
+  const [navPickTarget, setNavPickTarget] = useState(null)
   const [topOpen, setTopOpen] = useState(false)
   const [listOpen, setListOpen] = useState(false)
+  const [navigation, setNavigation] = useState(EMPTY_NAVIGATION)
   const [favoriteIds, setFavoriteIds] = useState([])
   // Stan w App, bo okienko baru otwiera zarówno marker na mapie, jak i pozycja na liście.
   const [selectedBarId, setSelectedBarId] = useState(null)
@@ -34,6 +49,9 @@ function App() {
   // Samo id w zależnościach, bo odświeżenie danych konta (getMe) daje nowy obiekt tego samego użytkownika
   const userId = user?.id ?? null
   const [adminOpen, setAdminOpen] = useState(false)
+  // Pozycja z przycisku lokalizacji na mapie; z niej liczona jest odległość na liście i start nawigacji
+  const [userPosition, setUserPosition] = useState(null)
+  const navigationPanelRef = useRef(null)
   // Rola jest sprawdzana też w backendzie (403), tutaj decyduje tylko o pokazaniu panelu
   const isAdmin = user?.role === 'admin'
 
@@ -101,6 +119,53 @@ function App() {
     const timer = setTimeout(() => setFavoriteError(''), 4000)
     return () => clearTimeout(timer)
   }, [favoriteError])
+
+  useEffect(() => {
+    if (!navOpen) {
+      setNavPickTarget(null)
+    }
+  }, [navOpen])
+
+  useEffect(() => {
+    if (!navOpen || !userPosition) {
+      return
+    }
+    setNavigation((prev) => {
+      if (prev.origin) {
+        return prev
+      }
+      return {
+        ...prev,
+        origin: {
+          lat: userPosition.lat,
+          lon: userPosition.lon,
+          label: 'Moja lokalizacja',
+        },
+      }
+    })
+  }, [navOpen, userPosition])
+
+  useEffect(() => {
+    if (!userPosition) {
+      return
+    }
+    setNavigation((prev) => {
+      if (prev.origin?.label !== 'Moja lokalizacja') {
+        return prev
+      }
+      if (prev.origin.lat === userPosition.lat && prev.origin.lon === userPosition.lon) {
+        return prev
+      }
+      return {
+        ...prev,
+        origin: {
+          lat: userPosition.lat,
+          lon: userPosition.lon,
+          label: 'Moja lokalizacja',
+        },
+      }
+    })
+  }, [userPosition])
 
   function handleLoggedIn(session) {
     setSession(session)
@@ -239,10 +304,118 @@ function App() {
     return true
   }
 
+  function closeOtherLeftPanels(except) {
+    if (except !== 'nav') {
+      setNavOpen(false)
+    }
+    if (except !== 'top') {
+      setTopOpen(false)
+    }
+    if (except !== 'list') {
+      setListOpen(false)
+    }
+  }
+
+  // Otwarty jest najwyżej jeden panel po lewej, więc zamknięcie pozostałych nic nie psuje także przy zamykaniu.
+  function toggleTop() {
+    closeOtherLeftPanels('top')
+    setTopOpen(!topOpen)
+  }
+
+  function toggleList() {
+    closeOtherLeftPanels('list')
+    setListOpen(!listOpen)
+  }
+
+  function toggleNav() {
+    closeOtherLeftPanels('nav')
+    setNavOpen(!navOpen)
+  }
+
+  function handleNavigationChange(updater) {
+    setNavigation((prev) => (typeof updater === 'function' ? updater(prev) : updater))
+  }
+
+  function handleClearRoute() {
+    setNavigation((prev) => ({
+      ...prev,
+      route: null,
+      distanceM: null,
+      durationS: null,
+    }))
+  }
+
+  // useCallback, bo funkcja jest w zależnościach efektów mapy: nowa funkcja przy każdym renderze App
+  // przebudowywałaby wszystkie markery, np. przy każdym znaku wpisanym w polu celu.
+  const handleNavigationPick = useCallback(
+    (lat, lon, label = 'Punkt na mapie') => {
+      if (!navPickTarget) {
+        return
+      }
+      const field = navPickTarget === 'origin' ? 'origin' : 'dest'
+      setNavigation((prev) => ({
+        ...prev,
+        [field]: { lat, lon, label },
+        route: null,
+        distanceM: null,
+        durationS: null,
+      }))
+      setNavPickTarget(null)
+    },
+    [navPickTarget],
+  )
+
+  async function handleNavigateToBar(bar) {
+    const lat = bar.latitude ?? bar.lat
+    const lon = bar.longitude ?? bar.lon
+    setSelectedBarId(null)
+    closeOtherLeftPanels('nav')
+    setNavOpen(true)
+
+    // Start i profil liczone z bieżącego stanu przed setNavigation, bo React wykonuje funkcję
+    // przekazaną do setState dopiero przy renderze i zmienne ustawiane w niej byłyby jeszcze puste.
+    const routeProfile = navigation.routeProfile ?? 'driving'
+    const origin =
+      navigation.origin ??
+      (userPosition
+        ? {
+            lat: userPosition.lat,
+            lon: userPosition.lon,
+            label: 'Moja lokalizacja',
+          }
+        : null)
+    setNavigation((prev) => ({
+      ...prev,
+      dest: {
+        lat,
+        lon,
+        label: bar.name,
+      },
+      origin,
+      route: null,
+      distanceM: null,
+      durationS: null,
+    }))
+
+    navigationPanelRef.current?.clearRouteError?.()
+
+    if (origin?.lat != null && origin?.lon != null && lat != null && lon != null) {
+      try {
+        const result = await fetchOsrmRoute(origin.lat, origin.lon, lat, lon, routeProfile)
+        setNavigation((prev) => ({ ...prev, ...result }))
+        navigationPanelRef.current?.clearRouteError?.()
+      } catch (err) {
+        handleClearRoute()
+        navigationPanelRef.current?.reportRouteError?.(err.message)
+      }
+    }
+  }
+
   return (
     <div
       className={[
         'app',
+        navOpen ? 'app-nav-open' : '',
         topOpen ? 'app-top-open' : '',
         listOpen ? 'app-list-open' : '',
       ]
@@ -255,13 +428,22 @@ function App() {
           <feDisplacementMap in="SourceGraphic" in2="noise" scale="1.1" />
         </filter>
       </svg>
-      <MapScreen
+      <LeftToolRail
+        navOpen={navOpen}
         topOpen={topOpen}
         listOpen={listOpen}
+        onToggleNav={toggleNav}
+        onToggleTop={toggleTop}
+        onToggleList={toggleList}
+      />
+      <MapScreen
         selectedBarId={selectedBarId}
         favoriteIds={favoriteIds}
         barsVersion={barsVersion}
         loggedIn={user != null}
+        navigation={navigation}
+        navPickTarget={navPickTarget}
+        onNavigationPick={handleNavigationPick}
         onSelectBar={setSelectedBarId}
         onToggleFavorite={toggleFavorite}
         onRate={handleRate}
@@ -269,8 +451,8 @@ function App() {
         onReportPrice={handleReportPrice}
         onDisablePrice={isAdmin ? handleDisablePrice : null}
         onRequireLogin={() => setAccountOpen(true)}
-        onOpenTop={() => setTopOpen(true)}
-        onOpenList={() => setListOpen(true)}
+        onUserLocationChange={setUserPosition}
+        onNavigateToBar={handleNavigateToBar}
       />
       {!accountOpen ? (
         <button
@@ -287,6 +469,21 @@ function App() {
           {favoriteError}
         </p>
       ) : null}
+      <NavigationPanel
+        ref={navigationPanelRef}
+        open={navOpen}
+        barsVersion={barsVersion}
+        navigation={navigation}
+        userPosition={userPosition}
+        navPickTarget={navPickTarget}
+        onNavPickTargetChange={setNavPickTarget}
+        onNavigationChange={handleNavigationChange}
+        onClearRoute={handleClearRoute}
+        onClose={() => {
+          setNavPickTarget(null)
+          setNavOpen(false)
+        }}
+      />
       <TopPanel
         open={topOpen}
         barsVersion={barsVersion}
@@ -300,6 +497,7 @@ function App() {
         open={listOpen}
         barsVersion={barsVersion}
         favoriteIds={favoriteIds}
+        userPosition={userPosition}
         onToggleFavorite={toggleFavorite}
         onSelectBar={setSelectedBarId}
         onClose={() => setListOpen(false)}
