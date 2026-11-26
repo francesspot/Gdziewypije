@@ -244,6 +244,14 @@ const NavigationPanel = forwardRef(function NavigationPanel(
     // Teksty pól ustawiane poza funkcją przekazaną do setState, bo ta funkcja nie powinna zmieniać innego stanu.
     setOriginText(navigation.dest?.label ?? '')
     setDestText(navigation.origin?.label ?? '')
+
+    // Wyznaczona trasa zostaje na mapie do czasu przeliczenia w odwrotnym kierunku, więc nie znika na chwilę
+    const hadRoute = navigation.route?.length > 0
+    if (hadRoute) {
+      onNavigationChange((prev) => ({ ...prev, origin: prev.dest, dest: prev.origin }))
+      runRouteComputation(navigation.dest, navigation.origin)
+      return
+    }
     onNavigationChange((prev) => ({
       ...prev,
       origin: prev.dest,
