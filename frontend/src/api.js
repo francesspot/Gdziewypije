@@ -217,3 +217,10 @@ export function setDrinkActive(drinkId, isActive) {
     body: JSON.stringify({ is_active: isActive }),
   })
 }
+
+export function setPriceActive(priceId, isActive) {
+  return request(`/admin/prices/${priceId}`, {
+    method: 'PATCH',
+    body: JSON.stringify({ is_active: isActive }),
+  })
+}

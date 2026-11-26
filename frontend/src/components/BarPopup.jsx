@@ -29,6 +29,7 @@ function BarPopup({
   onRate,
   onConfirmPrice,
   onReportPrice,
+  onDisablePrice,
   onClose,
 }) {
   const [bar, setBar] = useState(null)
@@ -130,6 +131,26 @@ function BarPopup({
     }
   }
 
+  async function handleDisablePrice(price) {
+    // Wyłączenie zmienia aktualną cenę dla wszystkich, a panel nie ma przycisku ponownego włączenia
+    const label = `${price.drink_name} ${price.volume_ml} ml, ${formatPrice(price.amount)}`
+    if (!window.confirm(`Wyłączyć cenę: ${label}?`)) {
+      return
+    }
+    setConfirmingPriceId(price.price_id)
+    setPriceMessage('')
+    setPriceError('')
+    try {
+      if (await onDisablePrice(price.price_id)) {
+        setPriceMessage('Cena wyłączona')
+      }
+    } catch (err) {
+      setPriceError(err.message)
+    } finally {
+      setConfirmingPriceId(null)
+    }
+  }
+
   // Błędy nie są tu łapane, bo formularz pokazuje je przy polach albo pod sobą
   async function handleReportPrice(drinkId, amount) {
     setPriceMessage('')
@@ -218,6 +239,18 @@ function BarPopup({
                     >
                       zmiana
                     </button>
+                    {/* Diagram stanów ceny (etap 2): administrator wyłącza błędną cenę */}
+                    {onDisablePrice ? (
+                      <button
+                        className="bar-popup-disable"
+                        type="button"
+                        disabled={confirmingPriceId === price.price_id}
+                        onClick={() => handleDisablePrice(price)}
+                        aria-label={`Wyłącz cenę ${price.drink_name} ${price.volume_ml} ml`}
+                      >
+                        wyłącz
+                      </button>
+                    ) : null}
                   </span>
                 </li>
               ))}

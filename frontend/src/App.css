@@ -307,6 +307,13 @@
   background: var(--bg-coaster);
 }
 
+/* Przycisk administratora odsunięty i w kolorze ostrzeżenia, żeby nie mylił się z potwierdzeniem */
+.bar-popup-confirm .bar-popup-disable {
+  margin-left: auto;
+  border-color: var(--accent-brick);
+  color: var(--accent-brick);
+}
+
 .bar-popup-confirm button:disabled {
   cursor: wait;
   opacity: 0.6;

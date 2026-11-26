@@ -9,6 +9,7 @@ import {
   rateBar,
   removeFavorite,
   reportPrice,
+  setPriceActive,
   setSession,
 } from './api'
 import AccountPanel from './components/AccountPanel'
@@ -221,6 +222,23 @@ function App() {
     return true
   }
 
+  // Przekazywane tylko administratorowi; dla innych kont prop jest null i okienko baru nie pokazuje przycisku.
+  // Zwraca false, gdy trzeba się zalogować; inne błędy (403, 404) pokazuje okienko baru
+  async function handleDisablePrice(priceId) {
+    try {
+      await setPriceActive(priceId, false)
+    } catch (err) {
+      if (err.status === 401) {
+        handleUnauthorized()
+        return false
+      }
+      throw err
+    }
+    // Aktualna staje się poprzednia cena napoju albo żadna, więc mapa i okienko pobierają bary od nowa
+    setBarsVersion((version) => version + 1)
+    return true
+  }
+
   return (
     <div
       className={[
@@ -249,6 +267,7 @@ function App() {
         onRate={handleRate}
         onConfirmPrice={handleConfirmPrice}
         onReportPrice={handleReportPrice}
+        onDisablePrice={isAdmin ? handleDisablePrice : null}
         onRequireLogin={() => setAccountOpen(true)}
         onOpenTop={() => setTopOpen(true)}
         onOpenList={() => setListOpen(true)}
