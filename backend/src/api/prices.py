@@ -109,7 +109,8 @@ def report_price(
     description=(
         "`kind = confirm` potwierdza cenę: odświeża jej datę i daje 1 punkt. "
         "`kind = change` zgłasza, że cena jest inna, bez punktu (T3, PU.03). Wymaga logowania. "
-        "Cena nieaktualna daje 404, drugie potwierdzenie z tego samego konta daje 409."
+        "Cena nieaktualna daje 404, drugie potwierdzenie z tego samego konta "
+        "i potwierdzenie własnej ceny przez jej autora dają 409."
     ),
 )
 def confirm_price(
@@ -121,6 +122,12 @@ def confirm_price(
     # PU.03 (1): potwierdzić można tylko cenę, którą użytkownik widzi, czyli aktualną
     if fetch_current_price(conn, price_id) is None:
         raise HTTPException(status_code=404, detail="Cena nie istnieje lub nie jest aktualna")
+
+    # Zgłoszenie liczy się jak pierwsze potwierdzenie autora, więc drugie (i kolejny punkt) mu nie przysługuje.
+    # „change” zostaje dozwolone, bo autor może poprawić własną pomyłkę.
+    reported_by = conn.execute("SELECT reported_by FROM prices WHERE id = %s", (price_id,)).fetchone()["reported_by"]
+    if data.kind == "confirm" and reported_by == user["id"]:
+        raise HTTPException(status_code=409, detail="Nie można potwierdzić własnej ceny")
 
     # T3: confirm_price zapisuje potwierdzenie, a przy kind = 'confirm' także nową datę ceny i 1 punkt
     try:

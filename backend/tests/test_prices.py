@@ -238,6 +238,27 @@ def test_confirm_price_twice_by_same_user_returns_409(client, bar, drink, user, 
     assert points(other_user["id"]) == 1
 
 
+def test_confirm_own_price_returns_409_without_point(client, bar, drink, user):
+    price_id = report(client, bar, drink, user)
+
+    response = client.post(f"/prices/{price_id}/confirmations", json={}, headers=user["headers"])
+
+    # Zgłoszenie liczy się jak pierwsze potwierdzenie autora, więc zostaje tylko 5 punktów za zgłoszenie
+    assert response.status_code == 409
+    assert response.json() == {"detail": "Nie można potwierdzić własnej ceny"}
+    assert points(user["id"]) == 5
+
+
+def test_author_can_mark_own_price_as_changed(client, bar, drink, user):
+    price_id = report(client, bar, drink, user)
+
+    response = client.post(f"/prices/{price_id}/confirmations", json={"kind": "change"}, headers=user["headers"])
+
+    # Autor może zgłosić własną pomyłkę, a potem podać poprawną cenę (PU.03, ścieżka 2b)
+    assert response.status_code == 201
+    assert points(user["id"]) == 5
+
+
 def test_change_does_not_refresh_price_date_nor_add_point(client, bar, drink, user, other_user):
     price_id = report(client, bar, drink, user)
     make_price_old(price_id)
