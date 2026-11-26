@@ -4,11 +4,19 @@ import 'leaflet/dist/leaflet.css'
 import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png'
 import markerIcon from 'leaflet/dist/images/marker-icon.png'
 import markerShadow from 'leaflet/dist/images/marker-shadow.png'
-import { getBars } from '../api'
+import { getBars, getNearby } from '../api'
 import BarPopup from './BarPopup'
+import NearbyList from './NearbyList'
+import { LocateCrosshairIcon } from './icons'
+import { USER_LOCATION_ARROW_MARKUP } from './icons/UserLocationArrowIcon'
 
 const WROCLAW_CENTER = [51.11, 17.04]
 const INITIAL_ZOOM = 13
+const LOCATE_ZOOM = 15
+const USER_MARKER_SIZE = 64
+const NEARBY_RADIUS_M = 2000
+// Leaflet wpisuje kolor do atrybutu stroke linii SVG, a tam zmienna CSS też działa
+const ROUTE_COLOR = 'var(--accent-magenta)'
 
 // Vite nie serwuje domyślnych ścieżek ikon Leaflet.
 delete L.Icon.Default.prototype._getIconUrl
@@ -92,9 +100,36 @@ function createBarMarkerIcon(mode, bar) {
   })
 }
 
+function createRouteStartIcon() {
+  return L.divIcon({
+    className: 'route-marker',
+    html: '<div class="route-marker-start"></div>',
+    iconSize: [14, 14],
+    iconAnchor: [7, 7],
+  })
+}
+
+function createRouteEndIcon() {
+  return L.divIcon({
+    className: 'route-marker',
+    html: '<div class="route-marker-end"></div>',
+    iconSize: [22, 30],
+    iconAnchor: [11, 28],
+  })
+}
+
+function createUserLocationIcon(headingDeg) {
+  const rotation = Number.isFinite(headingDeg) ? headingDeg : 0
+  const html = `<div class="user-location-marker" role="img" aria-label="Twoja lokalizacja"><div class="user-location-halo"></div><div class="user-location-arrow" style="transform: rotate(${rotation}deg)">${USER_LOCATION_ARROW_MARKUP}</div></div>`
+  return L.divIcon({
+    className: 'user-location',
+    html,
+    iconSize: [USER_MARKER_SIZE, USER_MARKER_SIZE],
+    iconAnchor: [USER_MARKER_SIZE / 2, USER_MARKER_SIZE / 2],
+  })
+}
+
 function MapScreen({
-  topOpen,
-  listOpen,
   selectedBarId,
   favoriteIds,
   barsVersion,
@@ -105,12 +140,18 @@ function MapScreen({
   onConfirmPrice,
   onReportPrice,
   onRequireLogin,
-  onOpenTop,
-  onOpenList,
+  onUserLocationChange,
+  navigation,
+  navPickTarget,
+  onNavigationPick,
+  onNavigateToBar,
 }) {
   const mapContainerRef = useRef(null)
   const mapRef = useRef(null)
   const markersLayerRef = useRef(null)
+  const routeLayerRef = useRef(null)
+  const userMarkerRef = useRef(null)
+  const geoPendingRef = useRef(false)
   const userMovedMapRef = useRef(false)
   const fitBoundsDoneRef = useRef(false)
   const [mapReady, setMapReady] = useState(false)
@@ -118,6 +159,11 @@ function MapScreen({
   const [mode, setMode] = useState('rating')
   const [fetchError, setFetchError] = useState('')
   const [onlyFavorites, setOnlyFavorites] = useState(false)
+  const [geoPending, setGeoPending] = useState(false)
+  const [geoAlert, setGeoAlert] = useState('')
+  const [nearbyOpen, setNearbyOpen] = useState(false)
+  const [nearbyBars, setNearbyBars] = useState([])
+  const [nearbyError, setNearbyError] = useState('')
   // Po wylogowaniu filtr nie działa, żeby mapa nie została pusta; po ponownym zalogowaniu wraca
   const showOnlyFavorites = onlyFavorites && loggedIn
   const noFavoritesVisible =
@@ -152,11 +198,132 @@ function MapScreen({
     setMapReady(true)
 
     return () => {
+      if (userMarkerRef.current) {
+        userMarkerRef.current = null
+      }
       map.remove()
       mapRef.current = null
       setMapReady(false)
     }
   }, [])
+
+  useEffect(() => {
+    if (!geoAlert) {
+      return
+    }
+    const timer = setTimeout(() => setGeoAlert(''), 5000)
+    return () => clearTimeout(timer)
+  }, [geoAlert])
+
+  useEffect(() => {
+    if (!nearbyError) {
+      return
+    }
+    const timer = setTimeout(() => setNearbyError(''), 5000)
+    return () => clearTimeout(timer)
+  }, [nearbyError])
+
+  function clearNearbyList() {
+    setNearbyOpen(false)
+    setNearbyBars([])
+    setNearbyError('')
+  }
+
+  function clearUserMarker() {
+    const map = mapRef.current
+    if (userMarkerRef.current && map) {
+      map.removeLayer(userMarkerRef.current)
+      userMarkerRef.current = null
+    }
+    clearNearbyList()
+    onUserLocationChange?.(null)
+  }
+
+  function handleLocate() {
+    const map = mapRef.current
+    if (!map || geoPendingRef.current) {
+      return
+    }
+
+    if (!navigator.geolocation) {
+      setGeoAlert('Przeglądarka nie obsługuje lokalizacji. Mapa działa dalej.')
+      return
+    }
+
+    // Każde kliknięcie pobiera świeżą pozycję, więc lista „W pobliżu” otwiera się ponownie i jest aktualna.
+    // Stary marker zostaje do czasu odpowiedzi, żeby nie znikał podczas oczekiwania.
+    setGeoAlert('')
+    setNearbyError('')
+    geoPendingRef.current = true
+    setGeoPending(true)
+
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        geoPendingRef.current = false
+        setGeoPending(false)
+
+        const map = mapRef.current
+        if (!map) {
+          return
+        }
+
+        if (userMarkerRef.current) {
+          map.removeLayer(userMarkerRef.current)
+        }
+
+        const { latitude, longitude, heading } = position.coords
+        const headingDeg = Number.isFinite(heading) ? heading : 0
+        const marker = L.marker([latitude, longitude], {
+          icon: createUserLocationIcon(headingDeg),
+          interactive: false,
+          zIndexOffset: 1000,
+        })
+        marker.addTo(map)
+        userMarkerRef.current = marker
+        map.setView([latitude, longitude], LOCATE_ZOOM)
+
+        onUserLocationChange?.({
+          lat: latitude,
+          lon: longitude,
+          heading: Number.isFinite(heading) ? heading : null,
+        })
+
+        getNearby(latitude, longitude, NEARBY_RADIUS_M)
+          .then((nearby) => {
+            if (!mapRef.current) {
+              return
+            }
+            setNearbyBars(nearby)
+            setNearbyOpen(true)
+            setNearbyError('')
+          })
+          .catch((err) => {
+            if (!mapRef.current) {
+              return
+            }
+            setNearbyError(err.message || 'Nie udało się pobrać barów w pobliżu.')
+          })
+      },
+      (error) => {
+        geoPendingRef.current = false
+        setGeoPending(false)
+        clearUserMarker()
+
+        let message = ''
+        if (error.code === 1) {
+          message = 'Bez zgody na lokalizację mapa działa dalej.'
+        } else if (error.code === 2) {
+          message = 'Nie udało się ustalić lokalizacji.'
+        } else if (error.code === 3) {
+          message = 'Upłynął limit czasu na lokalizację.'
+        }
+        if (message) {
+          setGeoAlert(message)
+        }
+      },
+      { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 },
+    )
+  }
 
   useEffect(() => {
     if (!mapReady) {
@@ -165,7 +332,12 @@ function MapScreen({
     const map = mapRef.current
 
     // Kliknięcie markera nie dociera do mapy (bubblingMouseEvents: false), więc to tylko klik w puste miejsce.
-    function handleMapClick() {
+    function handleMapClick(event) {
+      if (navPickTarget && onNavigationPick) {
+        const { lat, lng } = event.latlng
+        onNavigationPick(lat, lng, 'Punkt na mapie')
+        return
+      }
       onSelectBar(null)
     }
 
@@ -173,7 +345,7 @@ function MapScreen({
     return () => {
       map.off('click', handleMapClick)
     }
-  }, [mapReady, onSelectBar])
+  }, [mapReady, navPickTarget, onNavigationPick, onSelectBar])
 
   useEffect(() => {
     let cancelled = false
@@ -221,7 +393,13 @@ function MapScreen({
       const point = [bar.latitude, bar.longitude]
       // title daje podpowiedź po najechaniu.
       L.marker(point, { icon: createBarMarkerIcon(mode, bar), title: bar.name })
-        .on('click', () => onSelectBar(bar.id))
+        .on('click', () => {
+          if (navPickTarget && onNavigationPick) {
+            onNavigationPick(bar.latitude, bar.longitude, bar.name)
+            return
+          }
+          onSelectBar(bar.id)
+        })
         .addTo(layer)
       boundsPoints.push(point)
     }
@@ -244,10 +422,74 @@ function MapScreen({
         markersLayerRef.current = null
       }
     }
-  }, [bars, mode, mapReady, onSelectBar, showOnlyFavorites, favoriteIds])
+  }, [
+    bars,
+    mode,
+    mapReady,
+    navPickTarget,
+    onNavigationPick,
+    onSelectBar,
+    showOnlyFavorites,
+    favoriteIds,
+  ])
+
+  useEffect(() => {
+    if (!mapReady) {
+      return
+    }
+    const map = mapRef.current
+    if (!map) {
+      return
+    }
+
+    if (routeLayerRef.current) {
+      map.removeLayer(routeLayerRef.current)
+      routeLayerRef.current = null
+    }
+
+    const routeCoords = navigation?.route
+    if (!routeCoords?.length) {
+      return
+    }
+
+    const layer = L.layerGroup()
+    const polyline = L.polyline(routeCoords, {
+      color: ROUTE_COLOR,
+      weight: 6,
+      opacity: 0.85,
+    })
+    polyline.addTo(layer)
+
+    L.marker(routeCoords[0], {
+      icon: createRouteStartIcon(),
+      interactive: false,
+      zIndexOffset: 500,
+    }).addTo(layer)
+    L.marker(routeCoords[routeCoords.length - 1], {
+      icon: createRouteEndIcon(),
+      interactive: false,
+      zIndexOffset: 500,
+    }).addTo(layer)
+
+    layer.addTo(map)
+    routeLayerRef.current = layer
+    map.fitBounds(polyline.getBounds(), { padding: [48, 48] })
+
+    return () => {
+      if (map.hasLayer(layer)) {
+        map.removeLayer(layer)
+      }
+      if (routeLayerRef.current === layer) {
+        routeLayerRef.current = null
+      }
+    }
+  }, [navigation?.route, mapReady])
 
   return (
-    <section className="map-screen" aria-label="Mapa">
+    <section
+      className={['map-screen', navPickTarget ? 'map-nav-pick' : ''].filter(Boolean).join(' ')}
+      aria-label="Mapa"
+    >
       {fetchError ? (
         <p className="map-fetch-error" role="alert">
           {fetchError}
@@ -258,7 +500,23 @@ function MapScreen({
           Brak ulubionych barów
         </p>
       ) : null}
+      {geoAlert ? (
+        <p className="map-geo-alert" role="status">
+          {geoAlert}
+        </p>
+      ) : null}
+      {nearbyError ? (
+        <p className="map-nearby-alert" role="status">
+          {nearbyError}
+        </p>
+      ) : null}
       <div className="map-canvas" ref={mapContainerRef} />
+      <NearbyList
+        open={nearbyOpen}
+        bars={nearbyBars}
+        onSelectBar={onSelectBar}
+        onClose={() => setNearbyOpen(false)}
+      />
       {selectedBarId != null ? (
         <BarPopup
           key={selectedBarId}
@@ -269,18 +527,9 @@ function MapScreen({
           onRate={onRate}
           onConfirmPrice={onConfirmPrice}
           onReportPrice={onReportPrice}
+          onNavigateToBar={onNavigateToBar}
           onClose={() => onSelectBar(null)}
         />
-      ) : null}
-      {!topOpen ? (
-        <button className="edge-button edge-button-left" type="button" onClick={onOpenTop}>
-          TOP
-        </button>
-      ) : null}
-      {!listOpen ? (
-        <button className="edge-button edge-button-right" type="button" onClick={onOpenList}>
-          Lista
-        </button>
       ) : null}
       <div className="map-controls" aria-label="Kontrolki mapy">
         <div className="map-mode-toggle" role="group" aria-label="Cena lub ocena">
@@ -345,17 +594,16 @@ function MapScreen({
         <button type="button" aria-label="Oddal" onClick={() => mapRef.current?.zoomOut()}>
           −
         </button>
-        <button className="map-locate" type="button" aria-label="Moja lokalizacja">
-          <svg viewBox="0 0 24 24" aria-hidden="true">
-            <circle cx="12" cy="12" r="3.2" fill="none" stroke="var(--bg-foam)" strokeWidth="2.5" />
-            <path
-              d="M12 3.5 V7.2 M12 16.8 V20.5 M3.5 12 H7.2 M16.8 12 H20.5"
-              fill="none"
-              stroke="var(--bg-foam)"
-              strokeWidth="2.5"
-              strokeLinecap="round"
-            />
-          </svg>
+        <button
+          className="map-locate"
+          type="button"
+          aria-label="Pokaż swoją lokalizację"
+          data-tooltip="Pokaż swoją lokalizację"
+          aria-busy={geoPending || undefined}
+          disabled={geoPending}
+          onClick={handleLocate}
+        >
+          <LocateCrosshairIcon />
         </button>
       </div>
     </section>
