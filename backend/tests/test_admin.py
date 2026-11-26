@@ -82,6 +82,7 @@ ADMIN_ROUTES = [
     ("post", "/admin/drinks", drink_data("x")),
     ("put", "/admin/drinks/1", drink_data("x")),
     ("patch", "/admin/drinks/1", {"is_active": False}),
+    ("patch", "/admin/prices/1", {"is_active": False}),
 ]
 
 
@@ -326,3 +327,58 @@ def test_list_all_drinks_includes_disabled_drink(client, admin_headers, tag):
     assert drinks[active_id]["is_active"] is True
     assert drinks[disabled_id]["is_active"] is False
     assert drinks[disabled_id]["volume_ml"] == 400
+
+
+# Ceny
+
+
+def report_price(client, admin_headers, bar_id, drink_id, amount):
+    admin_id = client.get("/auth/me", headers=admin_headers).json()["id"]
+    with connect() as conn:
+        return conn.execute(
+            "SELECT report_price(%s, %s, %s, %s) AS id", (bar_id, drink_id, amount, admin_id)
+        ).fetchone()["id"]
+
+
+def test_disabled_price_gives_way_to_previous_price(client, admin_headers, tag):
+    bar_id = client.post("/admin/bars", json=bar_data(tag), headers=admin_headers).json()["id"]
+    drink_id = client.post("/admin/drinks", json=drink_data(tag), headers=admin_headers).json()["id"]
+    report_price(client, admin_headers, bar_id, drink_id, 20)
+    wrong_id = report_price(client, admin_headers, bar_id, drink_id, 2)
+
+    response = client.patch(f"/admin/prices/{wrong_id}", json={"is_active": False}, headers=admin_headers)
+
+    assert response.status_code == 200
+    assert response.json()["is_active"] is False
+    # v_current_prices bierze najnowszy aktywny wpis, więc wraca poprzednia cena
+    prices = client.get(f"/bars/{bar_id}/prices").json()
+    assert [price["amount"] for price in prices] == [20]
+
+
+def test_disabled_only_price_leaves_bar_without_price(client, admin_headers, tag):
+    bar_id = client.post("/admin/bars", json=bar_data(tag), headers=admin_headers).json()["id"]
+    drink_id = client.post("/admin/drinks", json=drink_data(tag), headers=admin_headers).json()["id"]
+    price_id = report_price(client, admin_headers, bar_id, drink_id, 20)
+
+    client.patch(f"/admin/prices/{price_id}", json={"is_active": False}, headers=admin_headers)
+
+    assert client.get(f"/bars/{bar_id}/prices").json() == []
+
+
+def test_enabled_price_returns_as_current(client, admin_headers, tag):
+    bar_id = client.post("/admin/bars", json=bar_data(tag), headers=admin_headers).json()["id"]
+    drink_id = client.post("/admin/drinks", json=drink_data(tag), headers=admin_headers).json()["id"]
+    price_id = report_price(client, admin_headers, bar_id, drink_id, 20)
+    client.patch(f"/admin/prices/{price_id}", json={"is_active": False}, headers=admin_headers)
+
+    response = client.patch(f"/admin/prices/{price_id}", json={"is_active": True}, headers=admin_headers)
+
+    assert response.json()["is_active"] is True
+    assert [price["price_id"] for price in client.get(f"/bars/{bar_id}/prices").json()] == [price_id]
+
+
+def test_missing_price_returns_404(client, admin_headers):
+    response = client.patch("/admin/prices/2147483647", json={"is_active": False}, headers=admin_headers)
+
+    assert response.status_code == 404
+    assert response.json() == {"detail": "Cena nie istnieje"}
