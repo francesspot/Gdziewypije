@@ -48,5 +48,14 @@ class DrinkResponse(BaseModel):
 
 
 class ActiveRequest(BaseModel):
-    # false wyłącza bar lub napój, true włącza go z powrotem (dane nie są usuwane)
+    # false wyłącza bar, napój lub cenę, true włącza z powrotem (dane nie są usuwane)
     is_active: bool = Field(examples=[False])
+
+
+class AdminPriceResponse(BaseModel):
+    id: int
+    bar_id: int
+    drink_id: int
+    # float zamiast Decimal, bo Decimal trafiłby do JSON jako tekst ("11.50"), a nie liczba
+    amount: float
+    is_active: bool

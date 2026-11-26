@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import { getBars, getRanking } from '../api'
+import { distanceMeters, formatDistanceMeters } from '../geoDistance'
 import CloseArrow from './CloseArrow'
 import FavoriteStar from './FavoriteStar'
 
@@ -7,7 +8,26 @@ function formatRating(avgRating) {
   return avgRating == null ? '–' : avgRating.toFixed(1)
 }
 
-function BarListItem({ bar, isFavorite, onToggleFavorite, onSelectBar }) {
+function barDistanceLabel(bar, userPosition) {
+  if (
+    !userPosition ||
+    bar.latitude == null ||
+    bar.longitude == null ||
+    !Number.isFinite(bar.latitude) ||
+    !Number.isFinite(bar.longitude)
+  ) {
+    return '-'
+  }
+  const m = distanceMeters(
+    userPosition.lat,
+    userPosition.lon,
+    bar.latitude,
+    bar.longitude,
+  )
+  return formatDistanceMeters(m)
+}
+
+function BarListItem({ bar, isFavorite, onToggleFavorite, onSelectBar, distanceLabel }) {
   return (
     <li>
       {/* Pusta komórka bez miejsca wyrównuje nazwy w obu sekcjach */}
@@ -21,6 +41,7 @@ function BarListItem({ bar, isFavorite, onToggleFavorite, onSelectBar }) {
         {bar.name}
       </button>
       <span className="rating">{formatRating(bar.avg_rating)}</span>
+      <span className="bar-distance">{distanceLabel}</span>
     </li>
   )
 }
@@ -29,6 +50,7 @@ function ListPanel({
   open,
   barsVersion,
   favoriteIds,
+  userPosition,
   onToggleFavorite,
   onSelectBar,
   onClose,
@@ -82,12 +104,16 @@ function ListPanel({
 
   return (
     <aside
-      className={['side-panel', 'side-panel-right', open ? 'is-open' : ''].filter(Boolean).join(' ')}
+      className={['side-panel', 'side-panel-left', open ? 'is-open' : ''].filter(Boolean).join(' ')}
       aria-label="Lista barów"
       aria-hidden={!open}
       inert={!open}
     >
       <header className="list-header">
+        <button className="close-button" type="button" onClick={onClose} aria-label="Zamknij listę">
+          <CloseArrow direction="left" />
+        </button>
+        <h1>Lista</h1>
         <button
           className="panel-switch-button"
           type="button"
@@ -95,10 +121,6 @@ function ListPanel({
           aria-label="Przejdź do TOP"
         >
           TOP
-        </button>
-        <h1>Lista</h1>
-        <button className="close-button" type="button" onClick={onClose} aria-label="Zamknij listę">
-          <CloseArrow direction="right" />
         </button>
       </header>
       <label className="search">
@@ -170,6 +192,7 @@ function ListPanel({
                 isFavorite={favoriteIds.includes(bar.id)}
                 onToggleFavorite={onToggleFavorite}
                 onSelectBar={onSelectBar}
+                distanceLabel={barDistanceLabel(bar, userPosition)}
               />
             ))}
           </ul>
@@ -185,6 +208,7 @@ function ListPanel({
                   isFavorite={favoriteIds.includes(bar.id)}
                   onToggleFavorite={onToggleFavorite}
                   onSelectBar={onSelectBar}
+                  distanceLabel={barDistanceLabel(bar, userPosition)}
                 />
               ))}
             </ul>

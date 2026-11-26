@@ -1,0 +1,2 @@
+// Strzałka markera użytkownika jako tekst HTML, bo L.divIcon przyjmuje kod HTML, a nie komponent React.
+export const USER_LOCATION_ARROW_MARKUP = `<svg class="user-location-arrow-svg" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 L21 19.5 L12 15.2 L3 19.5 Z" fill="var(--bg-foam)" stroke="var(--ink-oak)" stroke-width="2.5" stroke-linejoin="round"/><path d="M12 6.2 L17.2 17.2 L12 14.1 L6.8 17.2 Z" fill="var(--accent-location)"/></svg>`

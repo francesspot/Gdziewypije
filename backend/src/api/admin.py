@@ -1,10 +1,17 @@
-# Ścieżki administratora: dodawanie, edycja i wyłączanie barów i napojów (WB.11, WF.18).
+# Ścieżki administratora: dodawanie, edycja i wyłączanie barów i napojów, wyłączanie cen (WB.11, WF.18).
 import psycopg
 from fastapi import APIRouter, Depends, HTTPException
 
 from src.api.dependencies import require_admin
 from src.db.connection import get_connection
-from src.schemas.admin import ActiveRequest, BarRequest, BarResponse, DrinkRequest, DrinkResponse
+from src.schemas.admin import (
+    ActiveRequest,
+    AdminPriceResponse,
+    BarRequest,
+    BarResponse,
+    DrinkRequest,
+    DrinkResponse,
+)
 
 # WNF.06: require_admin na poziomie routera obejmuje wszystkie ścieżki modułu
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(require_admin)])
@@ -180,4 +187,25 @@ def set_drink_active(drink_id: int, data: ActiveRequest, conn: psycopg.Connectio
     ).fetchone()
     if row is None:
         raise HTTPException(status_code=404, detail="Napój nie istnieje")
+    return row
+
+
+@router.patch(
+    "/prices/{price_id}",
+    response_model=AdminPriceResponse,
+    summary="Włączenie lub wyłączenie ceny",
+    description=(
+        "Ustawia `is_active`. Po wyłączeniu aktualnej ceny aktualna staje się poprzednia aktywna cena "
+        "tego napoju w barze, a gdy jej nie ma, bar nie ma ceny tego napoju. Wymaga konta administratora."
+    ),
+)
+def set_price_active(price_id: int, data: ActiveRequest, conn: psycopg.Connection = Depends(get_connection)) -> dict:
+    # Diagram stanów ceny (etap 2): administrator wyłącza błędną cenę. v_current_prices bierze najnowszy
+    # aktywny wpis, więc wyłączenie przywraca poprzednią cenę bez zmian w historii.
+    row = conn.execute(
+        "UPDATE prices SET is_active = %s WHERE id = %s RETURNING id, bar_id, drink_id, amount, is_active",
+        (data.is_active, price_id),
+    ).fetchone()
+    if row is None:
+        raise HTTPException(status_code=404, detail="Cena nie istnieje")
     return row
